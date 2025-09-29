@@ -11,11 +11,6 @@ services:
       - "5438:5438"
     networks:
       - sprintly_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -p 5438"] 
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   app:
     build:
@@ -31,8 +26,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     volumes:
       - .:/app
       - node_modules:/app/node_modules
@@ -42,6 +36,7 @@ services:
 networks:
   sprintly_network:
     driver: bridge
+    name: sprintly_network
 
 volumes:
   node_modules:

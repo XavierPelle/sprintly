@@ -1,19 +1,14 @@
 import { 
   Entity, 
-  PrimaryGeneratedColumn, 
   Column, 
   OneToMany, 
-  CreateDateColumn,
-  UpdateDateColumn
 } from "typeorm";
 import { Ticket } from "./Ticket";
 import { Comment } from "./Comment";
+import { BaseEntity } from "./BaseEntity";
 
 @Entity()
-export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class User extends BaseEntity {
   @Column()
   firstName: string;
 
@@ -35,9 +30,4 @@ export class User {
   @OneToMany(() => Comment, (comment) => comment.user)
   comments: Comment[];
 
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

@@ -10,12 +10,15 @@
    },
    "dependencies": {
       "fastify": "^5.6.1",
+      "nodemon": "^3.1.10",
       "pg": "^8.14.1",
       "reflect-metadata": "^0.2.2",
       "typeorm": "0.3.27"
    },
    "scripts": {
-      "dev": "ts-node src/app.ts",
+      "dev": "nodemon --exec ts-node src/infrastructure/web/app.ts",
+      "dev:watch": "nodemon",
+      "start": "ts-node src/infrastructure/web/app.ts",
       "typeorm": "typeorm-ts-node-commonjs"
    }
 }

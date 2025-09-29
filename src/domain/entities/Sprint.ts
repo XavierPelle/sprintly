@@ -1,10 +1,9 @@
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Ticket } from "./Ticket";
+import { BaseEntity } from "./BaseEntity";
 
 @Entity()
-export class Sprint {
-  @PrimaryGeneratedColumn()
-  id: number;
+export class Sprint extends BaseEntity {
 
   @Column()
   name: string;
@@ -21,9 +20,4 @@ export class Sprint {
   @OneToMany(() => Ticket, (ticket) => ticket.sprint)
   tickets: Ticket[];
 
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

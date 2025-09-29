@@ -11,12 +11,11 @@ import { TicketType } from "../enums/TicketType";
 import { User } from "./User";
 import { Comment } from "./Comment";
 import { Sprint } from "./Sprint";
+import { BaseEntity } from "./BaseEntity";
 
 
 @Entity()
-export class Ticket {
-  @PrimaryGeneratedColumn()
-  id: number;
+export class Ticket extends BaseEntity {
 
   @Column()
   key: string;
@@ -47,10 +46,4 @@ export class Ticket {
 
   @OneToMany(() => Comment, (comment) => comment.ticket)
   comments: Comment[];
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }
