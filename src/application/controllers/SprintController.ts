@@ -3,10 +3,10 @@ import { Sprint } from "../../domain/entities/Sprint";
 import { SprintRepository } from "../../domain/repositories/SprintRepository";
 import { TicketRepository } from "../../domain/repositories/TicketRepository";
 import { AbstractController } from "./AbstractController";
-import { AddTicketsToSprintUseCase } from "../usecase/addTicketToSprint/AddTicketsToSprintUseCase";
-import { RemoveTicketsFromSprintUseCase } from "../usecase/removeTicketFromSprint/removeTicketFromSprintUseCase";
-import { AddTicketsToSprintCommand } from "../usecase/addTicketToSprint/AddTicketsToSprintCommand";
-import { RemoveTicketsFromSprintCommand } from "../usecase/removeTicketFromSprint/removeTicketFromSprintCommand";
+import { AddTicketsToSprintUseCase } from "../usecase/sprint/addTicketToSprint/AddTicketsToSprintUseCase";
+import { RemoveTicketsFromSprintUseCase } from "../usecase/sprint/removeTicketFromSprint/removeTicketFromSprintUseCase";
+import { AddTicketsToSprintCommand } from "../usecase/sprint/addTicketToSprint/AddTicketsToSprintCommand";
+import { RemoveTicketsFromSprintCommand } from "../usecase/sprint/removeTicketFromSprint/removeTicketFromSprintCommand";
 
 export class SprintController extends AbstractController<Sprint> {
   constructor(

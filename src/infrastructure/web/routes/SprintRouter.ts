@@ -13,8 +13,14 @@ export class SprintRouter extends AbstractRouter<Sprint> {
   }
 
   protected async addCustomRoutes(fastify: FastifyInstance): Promise<void> {
+    fastify.post(
+      "/:id/tickets", 
+      this.SprintController.addTickets.bind(this.SprintController)
+    );
     
-    fastify.post("/:id/tickets", this.SprintController.addTickets.bind(this.SprintController));
-    fastify.delete("/:id/tickets", this.SprintController.removeTickets.bind(this.SprintController));
+    fastify.delete(
+      "/:id/tickets", 
+      this.SprintController.removeTickets.bind(this.SprintController)
+    );
   }
 }

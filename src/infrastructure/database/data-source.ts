@@ -4,6 +4,8 @@ import { User } from "../../domain/entities/User"
 import { Ticket } from "../../domain/entities/Ticket"
 import { Sprint } from "../../domain/entities/Sprint"
 import { Comment } from "../../domain/entities/Comment"
+import { Image } from "../../domain/entities/Image"
+import { Test } from "../../domain/entities/Test"
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -18,7 +20,9 @@ export const AppDataSource = new DataSource({
     User,
     Ticket,
     Sprint,
-    Comment
+    Comment,
+    Image,
+    Test,
   ],
   migrations: [],
   subscribers: [],

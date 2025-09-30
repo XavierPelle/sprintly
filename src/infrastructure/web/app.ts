@@ -45,6 +45,8 @@ const start = async (): Promise<void> => {
     console.log("   📍 /api/tickets");
     console.log("   📍 /api/comments");
     console.log("   📍 /api/sprints");
+    console.log("   📍 /api/images");
+    console.log("   📍 /api/tests");
 
     await fastify.listen({ port: 3000, host: '0.0.0.0' })
     console.log('✅ Server is running on http://localhost:3000')
