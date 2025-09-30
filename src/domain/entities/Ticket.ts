@@ -1,23 +1,28 @@
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
-  ManyToOne, 
-  OneToMany, 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
   CreateDateColumn,
-  UpdateDateColumn
+  UpdateDateColumn,
+  Index
 } from "typeorm";
 import { TicketType } from "../enums/TicketType";
 import { User } from "./User";
 import { Comment } from "./Comment";
 import { Sprint } from "./Sprint";
 import { BaseEntity } from "./BaseEntity";
+import { Test } from "./Test";
+import { TicketStatus } from "../enums/TicketStatus";
+import { Image } from "./Image";
 
 
 @Entity()
 export class Ticket extends BaseEntity {
 
-  @Column()
+  @Index()
+  @Column({ unique: true })
   key: string;
 
   @Column()
@@ -26,8 +31,11 @@ export class Ticket extends BaseEntity {
   @Column("text")
   description: string;
 
-  @Column({ nullable: true })
-  image: string;
+  @OneToMany(() => Image, (image) => image.ticket)
+  images: Image[];
+
+  @Column({ type: "enum", enum: TicketStatus, default: TicketStatus.TODO })
+  status: TicketStatus;
 
   @Column({ type: "enum", enum: TicketType, default: TicketType.TASK })
   type: TicketType;
@@ -46,4 +54,7 @@ export class Ticket extends BaseEntity {
 
   @OneToMany(() => Comment, (comment) => comment.ticket)
   comments: Comment[];
+
+  @OneToMany(() => Test, (test) => test.ticket)
+  tests: Test[];
 }

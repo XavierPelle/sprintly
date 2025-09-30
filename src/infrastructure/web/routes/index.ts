@@ -56,8 +56,9 @@ export class RouteFactory {
   }
 
   private createSprintPlugin(): FastifyPluginAsync {
-    const repository = new SprintRepository(this.dataSource.getRepository(Sprint));
-    const controller = new SprintController(repository);
+    const sprintRepository = new SprintRepository(this.dataSource.getRepository(Sprint));
+    const ticketRepository = new TicketRepository(this.dataSource.getRepository(Ticket));
+    const controller = new SprintController(sprintRepository, ticketRepository);
     const router = new SprintRouter(controller);
     return router.plugin;
   }

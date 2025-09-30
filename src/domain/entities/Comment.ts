@@ -12,7 +12,10 @@ export class Comment extends BaseEntity {
     @ManyToOne(() => User, (user) => user.comments, { nullable: false })
     user: User;
 
-    @ManyToOne(() => Ticket, (ticket) => ticket.comments, { nullable: false })
+    @ManyToOne(() => Ticket, (ticket) => ticket.comments, {
+        nullable: false,
+        onDelete: "CASCADE"
+    })
     ticket: Ticket;
 
 }
