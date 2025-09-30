@@ -1,18 +1,30 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { User } from "../../domain/entities/User";
 import { UserRepository } from "../../domain/repositories/UserRepository";
+import { TicketRepository } from "../../domain/repositories/TicketRepository";
+import { SprintRepository } from "../../domain/repositories/SprintRepository";
+import { TestRepository } from "../../domain/repositories/TestRepository";
+import { CommentRepository } from "../../domain/repositories/CommentRepository";
 import { AbstractController } from "./AbstractController";
 import { RegisterUserUseCase } from "../usecase/user/register/RegisterUserUseCase";
 import { LoginUserUseCase } from "../usecase/user/login/LoginUserUseCase";
 import { UpdatePasswordUseCase } from "../usecase/user/updatePassword/UpdatePasswordUseCase";
 import { RefreshTokenUseCase } from "../usecase/user/refreshToken/RefreshTokenUseCase";
+import { GetUserDashboardUseCase } from "../usecase/user/getUserDashboard/GetUserDashboardUseCase";
 import { RegisterUserCommand } from "../usecase/user/register/RegisterUserCommand";
 import { LoginUserCommand } from "../usecase/user/login/LoginUserCommand";
 import { UpdatePasswordCommand } from "../usecase/user/updatePassword/UpdatePasswordCommand";
 import { RefreshTokenCommand } from "../usecase/user/refreshToken/RefreshTokenCommand";
+import { GetUserDashboardCommand } from "../usecase/user/getUserDashboard/GetUserDashboardCommand";
 
 export class UserController extends AbstractController<User> {
-  constructor(repository: UserRepository) {
+  constructor(
+    repository: UserRepository,
+    private readonly ticketRepository: TicketRepository,
+    private readonly sprintRepository: SprintRepository,
+    private readonly testRepository: TestRepository,
+    private readonly commentRepository: CommentRepository
+  ) {
     super(repository);
   }
 
@@ -21,7 +33,38 @@ export class UserController extends AbstractController<User> {
   }
 
   /**
-   * GET /email/:email - Get user by email
+   * GET /users/dashboard - Get user dashboard
+   */
+  async getDashboard(
+    request: FastifyRequest,
+    reply: FastifyReply
+  ): Promise<void> {
+    try {
+      const userId = request.user!.userId; // From auth middleware
+
+      const useCase = new GetUserDashboardUseCase(
+        this.userRepository,
+        this.ticketRepository,
+        this.sprintRepository,
+        this.testRepository,
+        this.commentRepository
+      );
+
+      const command = new GetUserDashboardCommand(userId);
+      const response = await useCase.execute(command);
+
+      if (!response.isSuccess()) {
+        return reply.status(response.getStatusCode()).send(response.toJSON());
+      }
+
+      reply.status(200).send(response.getData());
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * GET /users/email/:email - Get user by email
    */
   async getByEmail(
     request: FastifyRequest<{ Params: { email: string } }>,
@@ -42,7 +85,7 @@ export class UserController extends AbstractController<User> {
   }
 
   /**
-   * POST /register - Register a new user
+   * POST /users/register - Register a new user
    */
   async register(
     request: FastifyRequest<{
@@ -73,7 +116,7 @@ export class UserController extends AbstractController<User> {
   }
 
   /**
-   * POST /login - Authenticate user
+   * POST /users/login - Authenticate user
    */
   async login(
     request: FastifyRequest<{
@@ -102,7 +145,7 @@ export class UserController extends AbstractController<User> {
   }
 
   /**
-   * PATCH /:id/password - Update user password
+   * PATCH /users/:id/password - Update user password
    */
   async updatePassword(
     request: FastifyRequest<{
@@ -139,7 +182,7 @@ export class UserController extends AbstractController<User> {
   }
 
   /**
-   * POST /refresh-token - Refresh access token
+   * POST /users/refresh-token - Refresh access token
    */
   async refreshToken(
     request: FastifyRequest<{

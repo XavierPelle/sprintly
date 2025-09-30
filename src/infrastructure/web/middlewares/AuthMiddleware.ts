@@ -1,16 +1,6 @@
-// infrastructure/http/middlewares/authMiddleware.ts
 import { FastifyRequest, FastifyReply } from "fastify";
 import * as jwt from "jsonwebtoken";
-
-/**
- * Payload décodé du JWT
- */
-export interface JwtPayload {
-  userId: number;
-  email: string;
-  iat?: number;
-  exp?: number;
-}
+import { JwtPayload } from "./JwtPayload";
 
 /**
  * Extension du FastifyRequest pour inclure l'utilisateur authentifié

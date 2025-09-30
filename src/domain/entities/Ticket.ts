@@ -34,6 +34,7 @@ export class Ticket extends BaseEntity {
   @OneToMany(() => Image, (image) => image.ticket)
   images: Image[];
 
+  @Index()
   @Column({ type: "enum", enum: TicketStatus, default: TicketStatus.TODO })
   status: TicketStatus;
 
@@ -46,6 +47,7 @@ export class Ticket extends BaseEntity {
   @ManyToOne(() => User, (user) => user.createdTickets, { nullable: false })
   creator: User;
 
+  @Index()
   @ManyToOne(() => User, (user) => user.assignedTickets, { nullable: true })
   assignee: User;
 

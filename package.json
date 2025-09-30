@@ -9,6 +9,8 @@
       "typescript": "^5.8.2"
    },
    "dependencies": {
+      "@fastify/cors": "^11.1.0",
+      "@fastify/multipart": "^9.2.1",
       "bcrypt": "^6.0.0",
       "fastify": "^5.6.1",
       "jsonwebtoken": "^9.0.2",

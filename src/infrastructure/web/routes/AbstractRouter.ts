@@ -10,7 +10,7 @@ import {
 } from "../../../domain/entities/BaseEntity";
 import {
    authMiddleware
-} from "../middlewares/authMiddleware";
+} from "../middlewares/AuthMiddleware";
 
 /**
  * Abstract router that automatically sets up CRUD routes for Fastify
