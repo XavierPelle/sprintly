@@ -55,10 +55,11 @@ export class RemoveTicketsFromSprintUseCase extends AbstractUseCase<
       });
     }
 
-    await this.ticketRepository.updateMany(
-      { id: command.ticketIds as any },
-      { sprint: null as any }
-    );
+    for (const ticketId of command.ticketIds) {
+      await this.ticketRepository.update(ticketId, {
+        sprint: null as any
+      });
+    }
 
     return {
       sprintId: command.sprintId,

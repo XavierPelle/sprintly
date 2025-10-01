@@ -170,7 +170,7 @@ export class SprintController extends AbstractController<Sprint> {
           message: "ticketIds must be an array"
         });
       }
-
+      console.log('tickets to remove (controller):', ticketIds);
       const useCase = new RemoveTicketsFromSprintUseCase(
         this.SprintRepository,
         this.ticketRepository

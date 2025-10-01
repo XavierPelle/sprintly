@@ -363,17 +363,14 @@ This project follows **Clean Architecture** principles with clear separation of 
 
 ```
 ┌─────────────────────────────────────────┐
-│         Presentation Layer              │
-│    (Controllers, Routes, DTOs)          │
+│         Infrastructure Layer            │
+│    (Database, External Services)        │
 ├─────────────────────────────────────────┤
 │         Application Layer               │
-│    (Use Cases, Commands, Responses)     │
+│    (Use Cases, Commands, Controllers)   │
 ├─────────────────────────────────────────┤
 │           Domain Layer                  │
 │    (Entities, Repositories, Enums)      │
-├─────────────────────────────────────────┤
-│       Infrastructure Layer              │
-│    (Database, External Services)        │
 └─────────────────────────────────────────┘
 ```
 

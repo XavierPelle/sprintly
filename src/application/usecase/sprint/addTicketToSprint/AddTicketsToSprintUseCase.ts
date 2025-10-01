@@ -5,7 +5,6 @@ import { TicketRepository } from "../../../../domain/repositories/TicketReposito
 import { ApplicationException } from "../../../common/exceptions/ApplicationException";
 import { AddTicketsToSprintResponse } from "./AddTicketsToSprintResponse";
 
-
 /**
  * Use case to add tickets to a sprint
  */
@@ -26,11 +25,16 @@ export class AddTicketsToSprintUseCase extends AbstractUseCase<
     command: AddTicketsToSprintCommand
   ): Promise<Partial<AddTicketsToSprintResponse>> {
 
-    const sprint = await this.sprintRepository.findById(command.sprintId);
+    const sprint = await this.sprintRepository.findOne(
+      { id: command.sprintId },
+      { relations: ['tickets'] }
+    );
+    
     if (!sprint) {
       throw new ApplicationException('SPRINT_NOT_FOUND', { sprintId: command.sprintId });
     }
 
+    // Vérifier que tous les tickets existent
     const tickets = await Promise.all(
       command.ticketIds.map(id => this.ticketRepository.findById(id))
     );
@@ -42,10 +46,24 @@ export class AddTicketsToSprintUseCase extends AbstractUseCase<
       });
     }
 
-    await this.ticketRepository.updateMany(
-      { id: command.ticketIds as any },
-      { sprint: { id: command.sprintId } as any }
-    );
+    const currentPoints = sprint.tickets.reduce((sum, t) => sum + t.difficultyPoints, 0);
+    const newPoints = tickets.reduce((sum, t) => sum + (t?.difficultyPoints || 0), 0);
+    
+    if (currentPoints + newPoints > sprint.maxPoints) {
+      throw new ApplicationException('SPRINT_CAPACITY_EXCEEDED', {
+        sprintId: command.sprintId,
+        currentPoints,
+        maxPoints: sprint.maxPoints,
+        newPoints,
+        availablePoints: sprint.maxPoints - currentPoints
+      });
+    }
+
+    for (const ticketId of command.ticketIds) {
+      await this.ticketRepository.update(ticketId, {
+        sprint: { id: command.sprintId } as any
+      });
+    }
 
     return {
       sprintId: command.sprintId,
