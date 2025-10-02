@@ -84,8 +84,8 @@ export class SearchTicketsCommand implements Command {
       throw new InvalidCommandException('Page must be a positive number');
     }
 
-    if (this.limit <= 0 || this.limit > 100) {
-      throw new InvalidCommandException('Limit must be between 1 and 100');
+    if (this.limit <= 0 || this.limit > 1000) {
+      throw new InvalidCommandException('Limit must be between 1 and 1000');
     }
   }
 }

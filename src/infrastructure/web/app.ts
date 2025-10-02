@@ -3,31 +3,45 @@ import multipart from '@fastify/multipart'
 import cors from '@fastify/cors'
 import { AppDataSource } from '../database/data-source';
 import { RouteFactory } from './routes';
+import { seedDatabase } from '../database/seed';
+import fastifyStatic from "@fastify/static";
+import { join } from "path";
+
 
 const fastify = Fastify({
   logger: true,
-  bodyLimit: 10 * 1024 * 1024 
+  bodyLimit: 10 * 1024 * 1024
 })
 
 const start = async (): Promise<void> => {
   try {
     await AppDataSource.initialize()
-    
+
+    await seedDatabase(AppDataSource);
+
     await fastify.register(cors, {
       origin: process.env.CORS_ORIGIN || '*',
       credentials: true
     })
 
+    await fastify.register(fastifyStatic, {
+      root: join(__dirname, "../../../uploads"),
+      prefix: "/uploads/",
+    });
+
+    console.log(join(__dirname, "../../../uploads"));
+
+
     await fastify.register(multipart, {
       limits: {
         fileSize: 5 * 1024 * 1024,
-        files: 10 
+        files: 10
       }
     })
 
     const routeFactory = new RouteFactory(AppDataSource);
     await fastify.register(routeFactory.createApiPlugin(), { prefix: '/api' });
-    
+
     console.log("✅ All routes registered:");
     console.log("   📍 /api/users");
     console.log("   📍 /api/tickets");
@@ -37,15 +51,15 @@ const start = async (): Promise<void> => {
     console.log("   📍 /api/images");
 
     fastify.get('/health', async () => {
-      return { 
-        status: 'ok', 
+      return {
+        status: 'ok',
         timestamp: new Date().toISOString(),
         database: AppDataSource.isInitialized ? 'connected' : 'disconnected'
       }
     })
 
     fastify.get('/', async () => {
-      return { 
+      return {
         message: 'Welcome to the API',
         version: '1.0.0',
         endpoints: {
@@ -58,10 +72,10 @@ const start = async (): Promise<void> => {
 
     fastify.setErrorHandler((error, request, reply) => {
       fastify.log.error(error)
-      
+
       const statusCode = error.statusCode || 500
       const message = error.message || 'Internal Server Error'
-      
+
       reply.status(statusCode).send({
         success: false,
         message,
@@ -72,9 +86,9 @@ const start = async (): Promise<void> => {
 
     const port = Number(process.env.PORT) || 3000
     const host = process.env.HOST || '0.0.0.0'
-    
+
     await fastify.listen({ port, host })
-    
+
     console.log('')
     console.log('🚀 ====================================')
     console.log(`🚀 Server is running on http://localhost:${port}`)

@@ -29,49 +29,47 @@ export class ImageController extends AbstractController<Image> {
    * POST /images/upload - Upload an image
    * Expects multipart/form-data with file and metadata
    */
-  async upload(
-    request: FastifyRequest,
-    reply: FastifyReply
-  ): Promise<void> {
+  async upload(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     try {
       const parts = request.parts();
-      
       let fileData: any = null;
       let type: ImageType | null = null;
       let entityId: number | null = null;
-      let displayOrder: number = 0;
+      let displayOrder = 0;
 
       for await (const part of parts) {
-        if (part.type === 'file') {
+        if (part.type === "file") {
+          const buffer = await part.toBuffer();
           fileData = {
-            buffer: await part.toBuffer(),
-            filename: part.filename,
-            mimetype: part.mimetype
+            buffer,
+            originalName: part.filename,
+            mimeType: part.mimetype,
+            size: buffer.length
           };
         } else {
           const fieldName = part.fieldname;
           const value = part.value as string;
-          
-          if (fieldName === 'type') {
+
+          if (fieldName === "type") {
+            // Convertir string → enum
+            if (!Object.values(ImageType).includes(value as ImageType)) {
+              return reply.status(400).send({ message: "Invalid image type" });
+            }
             type = value as ImageType;
-          } else if (fieldName === 'entityId') {
+          } else if (fieldName === "entityId") {
             entityId = value ? Number(value) : null;
-          } else if (fieldName === 'displayOrder') {
+          } else if (fieldName === "displayOrder") {
             displayOrder = value ? Number(value) : 0;
           }
         }
       }
 
       if (!fileData) {
-        return reply.status(400).send({
-          message: "No file uploaded"
-        });
+        return reply.status(400).send({ message: "No file uploaded" });
       }
 
       if (!type) {
-        return reply.status(400).send({
-          message: "Image type is required"
-        });
+        return reply.status(400).send({ message: "Image type is required" });
       }
 
       const useCase = new UploadImageUseCase(
@@ -84,9 +82,9 @@ export class ImageController extends AbstractController<Image> {
       const command = new UploadImageCommand(
         {
           buffer: fileData.buffer,
-          originalName: fileData.filename,
-          mimeType: fileData.mimetype,
-          size: fileData.buffer.length
+          originalName: fileData.originalName,
+          mimeType: fileData.mimeType,
+          size: fileData.size
         },
         type,
         entityId,
@@ -104,6 +102,7 @@ export class ImageController extends AbstractController<Image> {
       throw error;
     }
   }
+
 
   /**
    * DELETE /images/:id/file - Delete image with file
