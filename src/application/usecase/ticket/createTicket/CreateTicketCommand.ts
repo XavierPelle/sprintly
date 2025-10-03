@@ -1,6 +1,7 @@
 import { Command } from "../../../common/usecase/Command";
 import { InvalidCommandException } from "../../../common/exceptions/InvalidCommandException";
 import { TicketType } from "../../../../domain/enums/TicketType";
+import { TicketPriority } from "../../../../domain/enums/TicketPriority";
 
 /**
  * Command to create a new ticket with auto-generated key
@@ -12,9 +13,10 @@ export class CreateTicketCommand implements Command {
     public readonly type: TicketType,
     public readonly difficultyPoints: number,
     public readonly creatorId: number,
-    public readonly assigneeId?: number,
+    public readonly priority: TicketPriority,
+    public readonly assignee?: number,
     public readonly sprintId?: number,
-    public readonly projectPrefix: string = "PROJ"
+    public readonly projectPrefix: string = "PROJ",
   ) {}
 
   validate(): void {
@@ -65,7 +67,7 @@ export class CreateTicketCommand implements Command {
       throw new InvalidCommandException('Creator ID must be a positive number');
     }
 
-    if (this.assigneeId !== undefined && this.assigneeId <= 0) {
+    if (this.assignee !== undefined && this.assignee <= 0) {
       throw new InvalidCommandException('Assignee ID must be a positive number or undefined');
     }
 

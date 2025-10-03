@@ -11,7 +11,7 @@ export class SearchTicketsCommand implements Command {
     public readonly query?: string,
     public readonly status?: TicketStatus,
     public readonly type?: TicketType,
-    public readonly assigneeId?: number,
+    public readonly assignee?: number,
     public readonly creatorId?: number,
     public readonly sprintId?: number,
     public readonly minPoints?: number,
@@ -45,7 +45,7 @@ export class SearchTicketsCommand implements Command {
       }
     }
 
-    if (this.assigneeId !== undefined && this.assigneeId <= 0) {
+    if (this.assignee !== undefined && this.assignee <= 0) {
       throw new InvalidCommandException('Assignee ID must be a positive number');
     }
 

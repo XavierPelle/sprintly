@@ -20,7 +20,8 @@ export class UploadImageUseCase extends AbstractUseCase<
 > {
   protected static commandClass = UploadImageCommand;
 
-  private readonly UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+  // Utiliser process.cwd() pour avoir le chemin absolu depuis la racine du projet
+  private readonly UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
 
   constructor(
     private readonly imageRepository: ImageRepository,
@@ -65,6 +66,8 @@ export class UploadImageUseCase extends AbstractUseCase<
 
     const filePath = path.join(this.UPLOAD_DIR, uniqueFilename);
     await fs.writeFile(filePath, command.file.buffer);
+
+    console.log('📁 File saved to:', filePath);
 
     const fileUrl = `/uploads/${uniqueFilename}`;
 

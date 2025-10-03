@@ -1,3 +1,4 @@
+import { TicketPriority } from "../../../../domain/enums/TicketPriority";
 import { TicketStatus } from "../../../../domain/enums/TicketStatus";
 import { TicketType } from "../../../../domain/enums/TicketType";
 
@@ -11,6 +12,7 @@ export interface GetTicketDetailsResponse {
   difficultyPoints: number;
   createdAt: Date;
   updatedAt: Date;
+  priority: TicketPriority;
   
   creator: {
     id: number;

@@ -260,7 +260,7 @@ Content-Type: application/json
   "description": "Add JWT-based authentication...",
   "type": "feature",
   "difficultyPoints": 5,
-  "assigneeId": 2,
+  "assignee": 2,
   "sprintId": 1,
   "projectPrefix": "PROJ"
 }
@@ -472,7 +472,7 @@ src/
   type: TicketType
   difficultyPoints: number
   creatorId: number (FK -> Users)
-  assigneeId: number (FK -> Users, nullable)
+  assignee: number (FK -> Users, nullable)
   sprintId: number (FK -> Sprints, nullable)
   createdAt: Date
   updatedAt: Date

@@ -44,7 +44,7 @@ export interface SearchTicketsResponse {
     query?: string;
     status?: TicketStatus;
     type?: TicketType;
-    assigneeId?: number;
+    assignee?: number;
     creatorId?: number;
     sprintId?: number;
     minPoints?: number;

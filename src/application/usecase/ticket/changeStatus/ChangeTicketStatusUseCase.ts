@@ -14,26 +14,26 @@ export class ChangeTicketStatusUseCase extends AbstractUseCase<
 > {
   protected static commandClass = ChangeTicketStatusCommand;
 
-  private readonly VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
-    [TicketStatus.TODO]: [TicketStatus.IN_PROGRESS],
-    [TicketStatus.IN_PROGRESS]: [
-      TicketStatus.TODO, 
-      TicketStatus.REVIEW
-    ],
-    [TicketStatus.REVIEW]: [
-      TicketStatus.IN_PROGRESS, 
-      TicketStatus.CHANGE_REQUEST, 
-      TicketStatus.TEST
-    ],
-    [TicketStatus.CHANGE_REQUEST]: [TicketStatus.IN_PROGRESS],
-    [TicketStatus.TEST]: [
-      TicketStatus.TEST_OK, 
-      TicketStatus.TEST_KO
-    ],
-    [TicketStatus.TEST_KO]: [TicketStatus.IN_PROGRESS],
-    [TicketStatus.TEST_OK]: [TicketStatus.PRODUCTION],
-    [TicketStatus.PRODUCTION]: []
-  };
+  // private readonly VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
+  //   [TicketStatus.TODO]: [TicketStatus.IN_PROGRESS],
+  //   [TicketStatus.IN_PROGRESS]: [
+  //     TicketStatus.TODO, 
+  //     TicketStatus.REVIEW
+  //   ],
+  //   [TicketStatus.REVIEW]: [
+  //     TicketStatus.IN_PROGRESS, 
+  //     TicketStatus.CHANGE_REQUEST, 
+  //     TicketStatus.TEST
+  //   ],
+  //   [TicketStatus.CHANGE_REQUEST]: [TicketStatus.IN_PROGRESS],
+  //   [TicketStatus.TEST]: [
+  //     TicketStatus.TEST_OK, 
+  //     TicketStatus.TEST_KO
+  //   ],
+  //   [TicketStatus.TEST_KO]: [TicketStatus.IN_PROGRESS],
+  //   [TicketStatus.TEST_OK]: [TicketStatus.PRODUCTION],
+  //   [TicketStatus.PRODUCTION]: []
+  // };
 
   constructor(private readonly ticketRepository: TicketRepository) {
     super();
@@ -60,15 +60,15 @@ export class ChangeTicketStatusUseCase extends AbstractUseCase<
       });
     }
 
-    const validTransitions = this.VALID_TRANSITIONS[currentStatus];
-    if (!validTransitions.includes(newStatus)) {
-      throw new ApplicationException('INVALID_STATUS_TRANSITION', {
-        ticketId: command.ticketId,
-        currentStatus,
-        newStatus,
-        allowedTransitions: validTransitions
-      });
-    }
+    // const validTransitions = this.VALID_TRANSITIONS[currentStatus];
+    // if (!validTransitions.includes(newStatus)) {
+    //   throw new ApplicationException('INVALID_STATUS_TRANSITION', {
+    //     ticketId: command.ticketId,
+    //     currentStatus,
+    //     newStatus,
+    //     allowedTransitions: validTransitions
+    //   });
+    // }
 
     await this.ticketRepository.update(command.ticketId, {
       status: newStatus

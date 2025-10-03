@@ -36,11 +36,11 @@ export class CreateTicketUseCase extends AbstractUseCase<
     }
 
     let assignee = null;
-    if (command.assigneeId) {
-      assignee = await this.userRepository.findById(command.assigneeId);
+    if (command.assignee) {
+      assignee = await this.userRepository.findById(command.assignee);
       if (!assignee) {
         throw new ApplicationException('ASSIGNEE_NOT_FOUND', { 
-          userId: command.assigneeId 
+          userId: command.assignee 
         });
       }
     }
@@ -84,11 +84,12 @@ export class CreateTicketUseCase extends AbstractUseCase<
       type: command.type,
       difficultyPoints: command.difficultyPoints,
       status: TicketStatus.TODO,
-      creator: { id: command.creatorId }
+      creator: { id: command.creatorId },
+      priority: command.priority
     };
 
-    if (command.assigneeId) {
-      ticketData.assignee = { id: command.assigneeId };
+    if (command.assignee) {
+      ticketData.assignee = { id: command.assignee };
     }
 
     if (command.sprintId) {
@@ -106,6 +107,7 @@ export class CreateTicketUseCase extends AbstractUseCase<
       type: ticket.type,
       difficultyPoints: ticket.difficultyPoints,
       createdAt: ticket.createdAt,
+      priority: ticket.priority,
       
       creator: {
         id: creator.id,

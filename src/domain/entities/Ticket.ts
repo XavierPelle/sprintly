@@ -16,6 +16,7 @@ import { BaseEntity } from "./BaseEntity";
 import { Test } from "./Test";
 import { TicketStatus } from "../enums/TicketStatus";
 import { Image } from "./Image";
+import { TicketPriority } from "../enums/TicketPriority";
 
 
 @Entity()
@@ -37,6 +38,10 @@ export class Ticket extends BaseEntity {
   @Index()
   @Column({ type: "enum", enum: TicketStatus, default: TicketStatus.TODO })
   status: TicketStatus;
+
+  @Index()
+  @Column({ type: "enum", enum: TicketPriority, default: TicketPriority.LOW })
+  priority: TicketPriority;
 
   @Column({ type: "enum", enum: TicketType, default: TicketType.TASK })
   type: TicketType;

@@ -16,6 +16,7 @@ import { SearchTicketsUseCase } from "../usecase/ticket/searchTickets/SearchTick
 import { SearchTicketsCommand } from "../usecase/ticket/searchTickets/SearchTicketsCommand";
 import { TicketStatus } from "../../domain/enums/TicketStatus";
 import { TicketType } from "../../domain/enums/TicketType";
+import { TicketPriority } from "../../domain/enums/TicketPriority";
 
 export class TicketController extends AbstractController<Ticket> {
   constructor(
@@ -40,7 +41,8 @@ export class TicketController extends AbstractController<Ticket> {
         description: string;
         type: TicketType;
         difficultyPoints: number;
-        assigneeId?: number;
+        priority: TicketPriority;
+        assignee?: number;
         sprintId?: number;
         projectPrefix?: string;
       };
@@ -52,8 +54,9 @@ export class TicketController extends AbstractController<Ticket> {
         title,
         description,
         type,
+        priority,
         difficultyPoints,
-        assigneeId,
+        assignee,
         sprintId,
         projectPrefix
       } = request.body;
@@ -72,7 +75,8 @@ export class TicketController extends AbstractController<Ticket> {
         type,
         difficultyPoints,
         creatorId,
-        assigneeId,
+        priority,
+        assignee,
         sprintId,
         projectPrefix || "PROJ"
       );
@@ -98,7 +102,7 @@ export class TicketController extends AbstractController<Ticket> {
         query?: string;
         status?: TicketStatus;
         type?: TicketType;
-        assigneeId?: number;
+        assignee?: number;
         creatorId?: number;
         sprintId?: number;
         minPoints?: number;
@@ -116,7 +120,7 @@ export class TicketController extends AbstractController<Ticket> {
         query,
         status,
         type,
-        assigneeId,
+        assignee,
         creatorId,
         sprintId,
         minPoints,
@@ -133,7 +137,7 @@ export class TicketController extends AbstractController<Ticket> {
         query,
         status,
         type,
-        assigneeId ? Number(assigneeId) : undefined,
+        assignee ? Number(assignee) : undefined,
         creatorId ? Number(creatorId) : undefined,
         sprintId ? Number(sprintId) : undefined,
         minPoints ? Number(minPoints) : undefined,

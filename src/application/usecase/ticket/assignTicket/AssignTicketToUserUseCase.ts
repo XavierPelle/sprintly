@@ -55,7 +55,7 @@ export class AssignTicketToUserUseCase extends AbstractUseCase<
     return {
       ticketId: command.ticketId,
       ticketKey: ticket.key,
-      assigneeId: command.userId,
+      assignee: command.userId,
       assigneeName,
       message: command.userId 
         ? `Ticket assigned to ${assigneeName}` 

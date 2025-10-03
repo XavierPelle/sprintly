@@ -40,7 +40,7 @@ export class SearchTicketsUseCase extends AbstractUseCase<
       const baseFilters: any = {};
       if (command.status) baseFilters.status = command.status;
       if (command.type) baseFilters.type = command.type;
-      if (command.assigneeId) baseFilters.assignee = { id: command.assigneeId };
+      if (command.assignee) baseFilters.assignee = { id: command.assignee };
       if (command.creatorId) baseFilters.creator = { id: command.creatorId };
       if (command.sprintId) baseFilters.sprint = { id: command.sprintId };
 
@@ -56,8 +56,8 @@ export class SearchTicketsUseCase extends AbstractUseCase<
       (where as any).type = command.type;
     }
 
-    if (command.assigneeId) {
-      (where as any).assignee = { id: command.assigneeId };
+    if (command.assignee) {
+      (where as any).assignee = { id: command.assignee };
     }
 
     if (command.creatorId) {
@@ -141,7 +141,7 @@ export class SearchTicketsUseCase extends AbstractUseCase<
         query: command.query,
         status: command.status,
         type: command.type,
-        assigneeId: command.assigneeId,
+        assignee: command.assignee,
         creatorId: command.creatorId,
         sprintId: command.sprintId,
         minPoints: command.minPoints,
@@ -263,7 +263,7 @@ export class SearchTicketsUseCase extends AbstractUseCase<
         query: command.query,
         status: command.status,
         type: command.type,
-        assigneeId: command.assigneeId,
+        assignee: command.assignee,
         creatorId: command.creatorId,
         sprintId: command.sprintId,
         minPoints: command.minPoints,

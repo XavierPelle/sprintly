@@ -60,6 +60,7 @@ export class GetTicketDetailsUseCase extends AbstractUseCase<
       difficultyPoints: ticket.difficultyPoints,
       createdAt: ticket.createdAt,
       updatedAt: ticket.updatedAt,
+      priority: ticket.priority,
       
       creator: {
         id: ticket.creator.id,

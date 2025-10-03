@@ -18,7 +18,7 @@ export class LoginUserUseCase extends AbstractUseCase<
 
   private readonly JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
   private readonly JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';
-  private readonly ACCESS_TOKEN_EXPIRES_IN = '15m';
+  private readonly ACCESS_TOKEN_EXPIRES_IN = '1d';
   private readonly REFRESH_TOKEN_EXPIRES_IN = '7d';
 
   constructor(private readonly userRepository: UserRepository) {

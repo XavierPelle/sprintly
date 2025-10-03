@@ -31,11 +31,11 @@ export class GetUserDashboardUseCase extends AbstractUseCase<
   protected async doExecute(
     command: GetUserDashboardCommand
   ): Promise<Partial<GetUserDashboardResponse>> {
-    
+
     const user = await this.userRepository.findById(command.userId);
     if (!user) {
-      throw new ApplicationException('USER_NOT_FOUND', { 
-        userId: command.userId 
+      throw new ApplicationException('USER_NOT_FOUND', {
+        userId: command.userId
       });
     }
 
@@ -50,14 +50,21 @@ export class GetUserDashboardUseCase extends AbstractUseCase<
     });
 
     const urgentTickets = assignedTickets
-      .filter(t => t.status === TicketStatus.TODO || t.status === TicketStatus.IN_PROGRESS)
-      .slice(0, 5)
-      .map(t => ({
-        id: t.id,
-        key: t.key,
-        title: t.title,
-        status: t.status,
-        difficultyPoints: t.difficultyPoints
+      .filter(ticket =>
+        ticket.priority === 'HIGH' || ticket.priority === 'CRITICAL'
+      )
+      .sort((a, b) => {
+        const priorityOrder = { CRITICAL: 0, HIGH: 1 };
+        return priorityOrder[a.priority] - priorityOrder[b.priority];
+      })
+      .slice(0, 10)
+      .map(ticket => ({
+        id: ticket.id,
+        key: ticket.key,
+        title: ticket.title,
+        status: ticket.status,
+        difficultyPoints: ticket.difficultyPoints,
+        priority: ticket.priority
       }));
 
     const createdTickets = await this.ticketRepository.findBy(
@@ -70,13 +77,17 @@ export class GetUserDashboardUseCase extends AbstractUseCase<
       createdByStatus[status] = createdTickets.filter(t => t.status === status).length;
     });
 
-    const recentCreated = createdTickets.slice(0, 5).map(t => ({
-      id: t.id,
-      key: t.key,
-      title: t.title,
-      status: t.status,
-      createdAt: t.createdAt
-    }));
+    const recentCreated = createdTickets
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5)
+      .map(ticket => ({
+        id: ticket.id,
+        key: ticket.key,
+        title: ticket.title,
+        status: ticket.status,
+        createdAt: ticket.createdAt,
+        priority: ticket.priority
+      }));
 
     const now = new Date();
     const allSprints = await this.sprintRepository.findAll({
@@ -84,8 +95,8 @@ export class GetUserDashboardUseCase extends AbstractUseCase<
     });
 
     const activeSprints = allSprints
-      .filter(sprint => 
-        sprint.startDate <= now && 
+      .filter(sprint =>
+        sprint.startDate <= now &&
         sprint.endDate >= now &&
         sprint.tickets.some(t => t.assignee?.id === command.userId)
       )
@@ -93,14 +104,14 @@ export class GetUserDashboardUseCase extends AbstractUseCase<
         const userTickets = sprint.tickets.filter(t => t.assignee?.id === command.userId);
         const userTicketsPoints = userTickets.reduce((sum, t) => sum + t.difficultyPoints, 0);
         const totalPoints = sprint.tickets.reduce((sum, t) => sum + t.difficultyPoints, 0);
-        
+
         const completedStatuses = [TicketStatus.TEST_OK, TicketStatus.PRODUCTION];
         const completedPoints = sprint.tickets
           .filter(t => completedStatuses.includes(t.status))
           .reduce((sum, t) => sum + t.difficultyPoints, 0);
-        
-        const progressPercentage = totalPoints > 0 
-          ? Math.round((completedPoints / totalPoints) * 100) 
+
+        const progressPercentage = totalPoints > 0
+          ? Math.round((completedPoints / totalPoints) * 100)
           : 0;
 
         return {
@@ -142,7 +153,7 @@ export class GetUserDashboardUseCase extends AbstractUseCase<
       { order: { createdAt: 'DESC' } }
     );
 
-    const completedTickets = assignedTickets.filter(t => 
+    const completedTickets = assignedTickets.filter(t =>
       t.status === TicketStatus.PRODUCTION
     ).length;
 

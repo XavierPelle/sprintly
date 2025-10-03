@@ -12,7 +12,25 @@ const fastify = Fastify({
   logger: true,
   bodyLimit: 10 * 1024 * 1024
 })
-
+    fastify.get('/debug/uploads', async () => {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      const uploadsPath = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+      
+      try {
+        const files = await fs.readdir(uploadsPath);
+        return {
+          uploadsPath,
+          filesCount: files.length,
+          files: files.slice(0, 10) // Premiers 10 fichiers
+        };
+      } catch (error: any) {
+        return {
+          uploadsPath,
+          error: error.message
+        };
+      }
+    })
 const start = async (): Promise<void> => {
   try {
     await AppDataSource.initialize()
@@ -20,16 +38,23 @@ const start = async (): Promise<void> => {
     await seedDatabase(AppDataSource);
 
     await fastify.register(cors, {
-      origin: process.env.CORS_ORIGIN || '*',
-      credentials: true
+      origin:  true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      exposedHeaders: ['Content-Range', 'X-Content-Range']
     })
 
+
+    const uploadsPath = process.env.UPLOAD_DIR || join(process.cwd(), 'uploads');
+
     await fastify.register(fastifyStatic, {
-      root: join(__dirname, "../../../uploads"),
+      root: uploadsPath,
       prefix: "/uploads/",
+      decorateReply: false // Important pour éviter les conflits
     });
 
-    console.log(join(__dirname, "../../../uploads"));
+    console.log('📁 Serving static files from:', uploadsPath);
 
 
     await fastify.register(multipart, {
