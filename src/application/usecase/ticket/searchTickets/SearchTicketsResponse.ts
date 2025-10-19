@@ -12,6 +12,17 @@ export interface SearchTicketsResponse {
     difficultyPoints: number;
     createdAt: Date;
     updatedAt: Date;
+    pullRequestLink: string | null;
+    testLink: string | null;
+    priority: string;
+    isBlocked: boolean;
+    blockedReason: string | null;
+
+    tags: Array<{
+      id: number;
+      name: string;
+      color: string;
+    }>;
     
     creator: {
       id: number;

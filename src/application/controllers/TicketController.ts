@@ -17,12 +17,19 @@ import { SearchTicketsCommand } from "../usecase/ticket/searchTickets/SearchTick
 import { TicketStatus } from "../../domain/enums/TicketStatus";
 import { TicketType } from "../../domain/enums/TicketType";
 import { TicketPriority } from "../../domain/enums/TicketPriority";
+import { AddTagToTicketUseCase} from "../usecase/tag/AddTagToTicket/AddTagToTicketUseCase";
+import {AddTagToTicketCommand} from "../usecase/tag/AddTagToTicket/AddTagToTicketCommand";
+import {RemoveTagFromTicketCommand} from "../usecase/tag/RemoveTagFromTicket/RemoveTagFromTicketCommand";
+import {RemoveTagFromTicketUseCase} from "../usecase/tag/RemoveTagFromTicket/RemoveTagFromTicketUseCase";
+import {TagRepository} from "../../domain/repositories/TagRepository";
+
 
 export class TicketController extends AbstractController<Ticket> {
   constructor(
     repository: TicketRepository,
     private readonly userRepository: UserRepository,
-    private readonly sprintRepository: SprintRepository
+    private readonly sprintRepository: SprintRepository,
+    private readonly tagRepository: TagRepository
   ) {
     super(repository);
   }
@@ -61,7 +68,7 @@ export class TicketController extends AbstractController<Ticket> {
         projectPrefix
       } = request.body;
 
-      const creatorId = request.user!.userId; // From auth middleware
+      const creatorId = request.user!.userId;
 
       const useCase = new CreateTicketUseCase(
         this.TicketRepository,
@@ -243,4 +250,103 @@ export class TicketController extends AbstractController<Ticket> {
       throw error;
     }
   }
+
+    /**
+     * POST /tickets/:id/tags - Add a tag to a ticket
+     */
+    async addTag(
+        request: FastifyRequest<{
+            Params: { id: string };
+            Body: { content: string; color: string };
+        }>,
+        reply: FastifyReply
+    ): Promise<void> {
+        try {
+            const ticketId = Number(request.params.id);
+            const { content, color } = request.body;
+
+            const useCase = new AddTagToTicketUseCase(
+                this.TicketRepository,
+                this.tagRepository
+            );
+
+            const command = new AddTagToTicketCommand(ticketId, content, color);
+            const response = await useCase.execute(command);
+
+            if (!response.isSuccess()) {
+                return reply.status(response.getStatusCode()).send(response.toJSON());
+            }
+
+            reply.status(201).send(response.getData());
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * DELETE /tickets/:id/tags/:tagId - Remove a tag from a ticket
+     */
+    async removeTag(
+        request: FastifyRequest<{
+            Params: { id: string; tagId: string };
+        }>,
+        reply: FastifyReply
+    ): Promise<void> {
+        try {
+            const ticketId = Number(request.params.id);
+            const tagId = Number(request.params.tagId);
+
+            const useCase = new RemoveTagFromTicketUseCase(
+                this.TicketRepository,
+                this.tagRepository
+            );
+
+            const command = new RemoveTagFromTicketCommand(ticketId, tagId);
+            const response = await useCase.execute(command);
+
+            if (!response.isSuccess()) {
+                return reply.status(response.getStatusCode()).send(response.toJSON());
+            }
+
+            reply.status(200).send(response.getData());
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * GET /tags - Get all unique tags with their usage count
+     */
+    async getAllTags(
+        request: FastifyRequest,
+        reply: FastifyReply
+    ): Promise<void> {
+        try {
+            const tags = await this.tagRepository.findAll({
+                order: { content: 'ASC' }
+            });
+
+            const tagMap = new Map<string, { content: string; color: string; count: number }>();
+
+            tags.forEach(tag => {
+                const key = tag.content.toLowerCase();
+                if (tagMap.has(key)) {
+                    const existing = tagMap.get(key)!;
+                    existing.count++;
+                } else {
+                    tagMap.set(key, {
+                        content: tag.content,
+                        color: tag.color,
+                        count: 1
+                    });
+                }
+            });
+
+            const uniqueTags = Array.from(tagMap.values()).sort((a, b) => b.count - a.count);
+
+            reply.status(200).send(uniqueTags);
+        } catch (error) {
+            throw error;
+        }
+    }
 }

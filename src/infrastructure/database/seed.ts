@@ -5,10 +5,9 @@ import { Ticket } from "../../domain/entities/Ticket";
 import { Sprint } from "../../domain/entities/Sprint";
 import { Comment } from "../../domain/entities/Comment";
 import { Test } from "../../domain/entities/Test";
-import { Image } from "../../domain/entities/Image";
+import { Tag } from "../../domain/entities/Tag";
 import { TicketStatus } from "../../domain/enums/TicketStatus";
 import { TicketType } from "../../domain/enums/TicketType";
-import { ImageType } from "../../domain/enums/ImageType";
 import { TicketPriority } from "../../domain/enums/TicketPriority";
 
 /**
@@ -32,7 +31,7 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
   const sprintRepo = dataSource.getRepository(Sprint);
   const commentRepo = dataSource.getRepository(Comment);
   const testRepo = dataSource.getRepository(Test);
-  const imageRepo = dataSource.getRepository(Image);
+  const tagRepo = dataSource.getRepository(Tag);
 
   // Check if data already exists
   const existingUsers = await userRepo.count();
@@ -131,8 +130,8 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
       // Sprint 1
       {
         key: "PROJ-001",
-        title: "Implémenter l’authentification des utilisateurs",
-        description: "Mettre en place un système d’authentification basé sur JWT avec endpoints d’inscription et de connexion. Inclure le hachage des mots de passe (bcrypt) et le mécanisme de rafraîchissement de token.",
+        title: "Implémenter l'authentification des utilisateurs",
+        description: "Mettre en place un système d'authentification basé sur JWT avec endpoints d'inscription et de connexion. Inclure le hachage des mots de passe (bcrypt) et le mécanisme de rafraîchissement de token.",
         status: TicketStatus.PRODUCTION,
         type: TicketType.FEATURE,
         difficultyPoints: 13,
@@ -140,6 +139,9 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: users[1],
         priority: TicketPriority.CRITICAL,
         sprint: sprints[0],
+        pullRequestLink: "https://github.com/repairsoft/project/pull/42",
+        testLink: "https://test.repairsoft.fr/auth-tests",
+        isBlocked: false,
       },
       {
         key: "PROJ-002",
@@ -152,11 +154,14 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: users[2],
         priority: TicketPriority.HIGH,
         sprint: sprints[0],
+        pullRequestLink: "https://github.com/repairsoft/project/pull/45",
+        isBlocked: true,
+        blockedReason: "En attente de la configuration du serveur SMTP pour l'envoi d'emails",
       },
       {
         key: "PROJ-003",
         title: "Gestion du profil utilisateur",
-        description: "Permettre aux utilisateurs de consulter et modifier leurs informations personnelles, y compris le téléchargement d’avatar.",
+        description: "Permettre aux utilisateurs de consulter et modifier leurs informations personnelles, y compris le téléchargement d'avatar.",
         status: TicketStatus.REVIEW,
         type: TicketType.FEATURE,
         difficultyPoints: 5,
@@ -164,11 +169,13 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: users[3],
         priority: TicketPriority.MEDIUM,
         sprint: sprints[0],
+        pullRequestLink: "https://github.com/repairsoft/project/pull/48",
+        isBlocked: false,
       },
       {
         key: "PROJ-004",
-        title: "Corriger l’expiration prématurée des tokens",
-        description: "Allonger la durée de vie des tokens et améliorer la logique de rafraîchissement afin d’éviter les déconnexions fréquentes.",
+        title: "Corriger l'expiration prématurée des tokens",
+        description: "Allonger la durée de vie des tokens et améliorer la logique de rafraîchissement afin d'éviter les déconnexions fréquentes.",
         status: TicketStatus.TEST,
         type: TicketType.BUG,
         difficultyPoints: 3,
@@ -176,12 +183,15 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: users[1],
         priority: TicketPriority.CRITICAL,
         sprint: sprints[0],
+        pullRequestLink: "https://github.com/repairsoft/project/pull/51",
+        testLink: "https://test.repairsoft.fr/token-tests",
+        isBlocked: false,
       },
 
       // Sprint 2
       {
         key: "PROJ-005",
-        title: "Créer l’API de gestion des tickets",
+        title: "Créer l'API de gestion des tickets",
         description: "Développer les opérations CRUD sur les tickets avec capacités de recherche et filtrage.",
         status: TicketStatus.TODO,
         type: TicketType.FEATURE,
@@ -190,11 +200,12 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: users[4],
         priority: TicketPriority.CRITICAL,
         sprint: sprints[1],
+        isBlocked: false,
       },
       {
         key: "PROJ-006",
         title: "Ajouter un système de commentaires aux tickets",
-        description: "Permettre l’ajout, l’édition et la suppression de commentaires sur les tickets, avec mentions et notifications.",
+        description: "Permettre l'ajout, l'édition et la suppression de commentaires sur les tickets, avec mentions et notifications.",
         status: TicketStatus.TODO,
         type: TicketType.FEATURE,
         difficultyPoints: 8,
@@ -202,6 +213,8 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: users[2],
         priority: TicketPriority.HIGH,
         sprint: sprints[1],
+        isBlocked: true,
+        blockedReason: "Dépend de PROJ-005 - API de gestion des tickets",
       },
       {
         key: "PROJ-007",
@@ -214,6 +227,7 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: users[3],
         priority: TicketPriority.HIGH,
         sprint: sprints[1],
+        isBlocked: false,
       },
 
       // Sprint 0
@@ -228,6 +242,9 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: users[0],
         priority: TicketPriority.MEDIUM,
         sprint: sprints[2],
+        pullRequestLink: "https://github.com/repairsoft/project/pull/1",
+        testLink: "https://test.repairsoft.fr/setup-tests",
+        isBlocked: false,
       },
       {
         key: "PROJ-009",
@@ -240,6 +257,9 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: users[1],
         priority: TicketPriority.HIGH,
         sprint: sprints[2],
+        pullRequestLink: "https://github.com/repairsoft/project/pull/5",
+        testLink: "https://test.repairsoft.fr/db-schema-tests",
+        isBlocked: false,
       },
       {
         key: "PROJ-010",
@@ -252,13 +272,15 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: users[4],
         priority: TicketPriority.HIGH,
         sprint: sprints[2],
+        pullRequestLink: "https://github.com/repairsoft/project/pull/12",
+        isBlocked: false,
       },
 
       // Backlog
       {
         key: "PROJ-011",
         title: "Ajouter le mode sombre",
-        description: "Créer un thème sombre pour l’application avec stockage de la préférence utilisateur.",
+        description: "Créer un thème sombre pour l'application avec stockage de la préférence utilisateur.",
         status: TicketStatus.TODO,
         type: TicketType.IMPROVEMENT,
         difficultyPoints: 5,
@@ -266,6 +288,7 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.MEDIUM,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-012",
@@ -278,11 +301,12 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.HIGH,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-013",
         title: "Ajouter les notifications par email",
-        description: "Notifier les utilisateurs lors d’événements importants (assignation, mentions, etc.).",
+        description: "Notifier les utilisateurs lors d'événements importants (assignation, mentions, etc.).",
         status: TicketStatus.TODO,
         type: TicketType.FEATURE,
         difficultyPoints: 13,
@@ -290,6 +314,8 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.HIGH,
         sprint: null,
+        isBlocked: true,
+        blockedReason: "En attente de la résolution de PROJ-002 pour la configuration email",
       },
       {
         key: "PROJ-014",
@@ -302,11 +328,12 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.CRITICAL,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-015",
         title: "Ajouter des graphiques burndown de sprint",
-        description: "Afficher l’évolution des points restants dans un sprint sous forme de graphique.",
+        description: "Afficher l'évolution des points restants dans un sprint sous forme de graphique.",
         status: TicketStatus.TODO,
         type: TicketType.FEATURE,
         difficultyPoints: 8,
@@ -314,11 +341,12 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.MEDIUM,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-016",
-        title: "Améliorer l’accessibilité",
-        description: "Respecter les normes WCAG pour rendre l’application accessible aux personnes en situation de handicap.",
+        title: "Améliorer l'accessibilité",
+        description: "Respecter les normes WCAG pour rendre l'application accessible aux personnes en situation de handicap.",
         status: TicketStatus.TODO,
         type: TicketType.IMPROVEMENT,
         difficultyPoints: 8,
@@ -326,6 +354,7 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.HIGH,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-017",
@@ -338,6 +367,8 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.CRITICAL,
         sprint: null,
+        isBlocked: true,
+        blockedReason: "Nécessite l'intégration d'un service SMS (Twilio) - budget en attente",
       },
       {
         key: "PROJ-018",
@@ -350,6 +381,7 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.MEDIUM,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-019",
@@ -362,6 +394,7 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.HIGH,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-020",
@@ -374,11 +407,13 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.CRITICAL,
         sprint: null,
+        isBlocked: true,
+        blockedReason: "Dépend de PROJ-030 - système de rôles et permissions",
       },
       {
         key: "PROJ-021",
         title: "Exporter les données en CSV et PDF",
-        description: "Permettre l’export des tickets, commentaires et rapports de tests en fichiers CSV ou PDF.",
+        description: "Permettre l'export des tickets, commentaires et rapports de tests en fichiers CSV ou PDF.",
         status: TicketStatus.TODO,
         type: TicketType.FEATURE,
         difficultyPoints: 5,
@@ -386,6 +421,7 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.MEDIUM,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-022",
@@ -398,11 +434,12 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.HIGH,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-023",
         title: "Optimiser le front-end pour mobile",
-        description: "Adapter l’interface utilisateur pour une meilleure compatibilité mobile (responsive design).",
+        description: "Adapter l'interface utilisateur pour une meilleure compatibilité mobile (responsive design).",
         status: TicketStatus.TODO,
         type: TicketType.IMPROVEMENT,
         difficultyPoints: 8,
@@ -410,6 +447,7 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.HIGH,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-024",
@@ -422,6 +460,7 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.HIGH,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-025",
@@ -434,11 +473,12 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.HIGH,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-026",
         title: "Ajouter un système de notifications en temps réel",
-        description: "Notifier en direct les utilisateurs via WebSocket lorsqu’un ticket ou un commentaire les concerne.",
+        description: "Notifier en direct les utilisateurs via WebSocket lorsqu'un ticket ou un commentaire les concerne.",
         status: TicketStatus.TODO,
         type: TicketType.FEATURE,
         difficultyPoints: 13,
@@ -446,6 +486,8 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.CRITICAL,
         sprint: null,
+        isBlocked: true,
+        blockedReason: "Bloqué par PROJ-014 - fuite mémoire websockets doit être corrigée d'abord",
       },
       {
         key: "PROJ-027",
@@ -458,6 +500,7 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.HIGH,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-028",
@@ -470,11 +513,12 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.CRITICAL,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-029",
         title: "Ajouter un tableau Kanban",
-        description: "Permettre de visualiser l’avancement des tickets sous forme de tableau Kanban interactif.",
+        description: "Permettre de visualiser l'avancement des tickets sous forme de tableau Kanban interactif.",
         status: TicketStatus.TODO,
         type: TicketType.FEATURE,
         difficultyPoints: 8,
@@ -482,6 +526,7 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.HIGH,
         sprint: null,
+        isBlocked: false,
       },
       {
         key: "PROJ-030",
@@ -494,12 +539,83 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         assignee: null,
         priority: TicketPriority.CRITICAL,
         sprint: null,
+        isBlocked: false,
       },
     ]);
 
     console.log(`✅ Created ${tickets.length} tickets`);
 
-    // 4. Create Comments
+    // 4. Create Tags
+    console.log("🏷️  Creating tags...");
+    const tags = await tagRepo.save([
+      // Tags for PROJ-001
+      { content: "authentication", color: "#3B82F6", ticket: tickets[0] },
+      { content: "security", color: "#EF4444", ticket: tickets[0] },
+      { content: "backend", color: "#10B981", ticket: tickets[0] },
+      
+      // Tags for PROJ-002
+      { content: "email", color: "#F59E0B", ticket: tickets[1] },
+      { content: "security", color: "#EF4444", ticket: tickets[1] },
+      { content: "blocked", color: "#DC2626", ticket: tickets[1] },
+      
+      // Tags for PROJ-003
+      { content: "frontend", color: "#8B5CF6", ticket: tickets[2] },
+      { content: "profile", color: "#06B6D4", ticket: tickets[2] },
+      
+      // Tags for PROJ-004
+      { content: "bug", color: "#DC2626", ticket: tickets[3] },
+      { content: "critical", color: "#991B1B", ticket: tickets[3] },
+      { content: "authentication", color: "#3B82F6", ticket: tickets[3] },
+      
+      // Tags for PROJ-005
+      { content: "api", color: "#10B981", ticket: tickets[4] },
+      { content: "crud", color: "#059669", ticket: tickets[4] },
+      { content: "backend", color: "#10B981", ticket: tickets[4] },
+      
+      // Tags for PROJ-006
+      { content: "feature", color: "#8B5CF6", ticket: tickets[5] },
+      { content: "comments", color: "#06B6D4", ticket: tickets[5] },
+      { content: "blocked", color: "#DC2626", ticket: tickets[5] },
+      
+      // Tags for PROJ-008
+      { content: "setup", color: "#6B7280", ticket: tickets[7] },
+      { content: "infrastructure", color: "#4B5563", ticket: tickets[7] },
+      { content: "docker", color: "#2563EB", ticket: tickets[7] },
+      
+      // Tags for PROJ-009
+      { content: "database", color: "#059669", ticket: tickets[8] },
+      { content: "typeorm", color: "#10B981", ticket: tickets[8] },
+      
+      // Tags for PROJ-013
+      { content: "notifications", color: "#06B6D4", ticket: tickets[12] },
+      { content: "email", color: "#F59E0B", ticket: tickets[12] },
+      { content: "blocked", color: "#DC2626", ticket: tickets[12] },
+      
+      // Tags for PROJ-014
+      { content: "memory-leak", color: "#DC2626", ticket: tickets[13] },
+      { content: "websocket", color: "#F59E0B", ticket: tickets[13] },
+      { content: "performance", color: "#EF4444", ticket: tickets[13] },
+      
+      // Tags for PROJ-017
+      { content: "2fa", color: "#991B1B", ticket: tickets[16] },
+      { content: "security", color: "#EF4444", ticket: tickets[16] },
+      { content: "blocked", color: "#DC2626", ticket: tickets[16] },
+      
+      // Tags for PROJ-020
+      { content: "admin", color: "#7C3AED", ticket: tickets[19] },
+      { content: "dashboard", color: "#8B5CF6", ticket: tickets[19] },
+      { content: "blocked", color: "#DC2626", ticket: tickets[19] },
+      
+      // Tags for PROJ-026
+      { content: "real-time", color: "#F59E0B", ticket: tickets[25] },
+      { content: "websocket", color: "#F59E0B", ticket: tickets[25] },
+      { content: "notifications", color: "#06B6D4", ticket: tickets[25] },
+      { content: "blocked", color: "#DC2626", ticket: tickets[25] },
+    ]);
+
+    console.log(`✅ Created ${tags.length} tags`);
+
+    // 5. Create Comments
     console.log("💬 Creating comments...");
     const comments = await commentRepo.save([
       {
@@ -520,6 +636,11 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
       {
         description: "Sure! Let's schedule a quick call this afternoon to debug it together.",
         user: users[0],
+        ticket: tickets[1],
+      },
+      {
+        description: "UPDATE: This is now blocked - we need the SMTP server credentials from IT before we can proceed.",
+        user: users[2],
         ticket: tickets[1],
       },
       {
@@ -552,11 +673,16 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
         user: users[0],
         ticket: tickets[4],
       },
+      {
+        description: "This ticket is blocked until PROJ-005 is completed. Marking as blocked.",
+        user: users[2],
+        ticket: tickets[5],
+      },
     ]);
 
     console.log(`✅ Created ${comments.length} comments`);
 
-    // 5. Create Tests
+    // 6. Create Tests
     console.log("🧪 Creating tests...");
     const tests = await testRepo.save([
       {
@@ -599,65 +725,17 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
 
     console.log(`✅ Created ${tests.length} tests`);
 
-    // 6. Create some example images (metadata only, no actual files)
-    console.log("🖼️  Creating image records...");
-    const images = await imageRepo.save([
-      {
-        url: "/uploads/avatar-alice.jpg",
-        filename: "avatar-alice.jpg",
-        originalName: "profile.jpg",
-        mimeType: "image/jpeg",
-        size: 153600,
-        displayOrder: 0,
-        type: ImageType.AVATAR,
-        user: users[0],
-      },
-      {
-        url: "/uploads/avatar-bob.jpg",
-        filename: "avatar-bob.jpg",
-        originalName: "photo.jpg",
-        mimeType: "image/jpeg",
-        size: 204800,
-        displayOrder: 0,
-        type: ImageType.AVATAR,
-        user: users[1],
-      },
-      {
-        url: "/uploads/ticket-screenshot-1.png",
-        filename: "ticket-screenshot-1.png",
-        originalName: "bug-screenshot.png",
-        mimeType: "image/png",
-        size: 512000,
-        displayOrder: 0,
-        type: ImageType.TICKET_ATTACHMENT,
-        ticket: tickets[3],
-      },
-      {
-        url: "/uploads/test-result-1.png",
-        filename: "test-result-1.png",
-        originalName: "test-results.png",
-        mimeType: "image/png",
-        size: 384000,
-        displayOrder: 0,
-        type: ImageType.TEST_ATTACHMENT,
-        test: tests[0],
-      },
-    ]);
-
-    console.log(`✅ Created ${images.length} image records`);
-
     console.log("\n✨ Database seeding completed successfully!");
     console.log("\n📊 Summary:");
     console.log(`   - ${users.length} users`);
     console.log(`   - ${sprints.length} sprints`);
-    console.log(`   - ${tickets.length} tickets`);
+    console.log(`   - ${tags.length} tags`);
     console.log(`   - ${comments.length} comments`);
     console.log(`   - ${tests.length} tests`);
-    console.log(`   - ${images.length} images`);
     console.log("\n🔑 Login credentials for all users:");
     console.log("   Email: <any-user>@repairsoft.fr");
     console.log("   Password: Password123!");
-    console.log("\n   Example: alice.martin@repairsoft.fr / Password123!\n");
+    console.log("\n   Example: xavier.pelle@repairsoft.fr / Password123!\n");
 
   } catch (error) {
     console.error("❌ Error during database seeding:", error);

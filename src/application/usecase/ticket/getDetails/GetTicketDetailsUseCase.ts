@@ -32,7 +32,9 @@ export class GetTicketDetailsUseCase extends AbstractUseCase<
           'comments',
           'comments.user',
           'tests',
-          'tests.user'
+            'tags' ,
+          'tests.user',
+            'tests.images'
         ],
         order: {
           images: { displayOrder: 'ASC' },
@@ -61,6 +63,11 @@ export class GetTicketDetailsUseCase extends AbstractUseCase<
       createdAt: ticket.createdAt,
       updatedAt: ticket.updatedAt,
       priority: ticket.priority,
+      pullRequestLink: ticket.pullRequestLink,
+      testLink: ticket.testLink,
+      branch: ticket.branch,
+        isBlocked: ticket.isBlocked,
+        blockedReason: ticket.blockedReason,
       
       creator: {
         id: ticket.creator.id,
@@ -100,18 +107,30 @@ export class GetTicketDetailsUseCase extends AbstractUseCase<
           lastName: comment.user.lastName
         }
       })),
-      
-      tests: ticket.tests.map(test => ({
-        id: test.id,
-        description: test.description,
-        isValidated: test.isValidated,
-        createdAt: test.createdAt,
-        user: {
-          id: test.user.id,
-          firstName: test.user.firstName,
-          lastName: test.user.lastName
-        }
+
+      tags: ticket.tags.map(tag => ({
+        id: tag.id,
+        content: tag.content,
+        color: tag.color
       })),
+
+        tests: ticket.tests.map(test => ({
+            id: test.id,
+            description: test.description,
+            isValidated: test.isValidated,
+            createdAt: test.createdAt,
+            images: test.images.map(img => ({
+                id: img.id,
+                url: img.url,
+                filename: img.filename,
+                displayOrder: img.displayOrder
+            })),
+            user: {
+                id: test.user.id,
+                firstName: test.user.firstName,
+                lastName: test.user.lastName
+            }
+        })),
       
       stats: {
         totalComments: ticket.comments.length,

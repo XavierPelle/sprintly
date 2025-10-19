@@ -26,7 +26,7 @@ export class GetSprintDetailsUseCase extends AbstractUseCase<
     const sprint = await this.sprintRepository.findOne(
       { id: command.sprintId },
       {
-        relations: ['tickets', 'tickets.assignee']
+        relations: ['tickets','tickets.tags','tickets.assignee']
       }
     );
 

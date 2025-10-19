@@ -6,6 +6,7 @@ import { Sprint } from "../../domain/entities/Sprint"
 import { Comment } from "../../domain/entities/Comment"
 import { Image } from "../../domain/entities/Image"
 import { Test } from "../../domain/entities/Test"
+import { Tag } from "../../domain/entities/Tag"
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -23,6 +24,7 @@ export const AppDataSource = new DataSource({
     Comment,
     Image,
     Test,
+    Tag
   ],
   migrations: [],
   subscribers: [],

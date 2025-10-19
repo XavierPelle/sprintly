@@ -17,6 +17,7 @@ import { Test } from "./Test";
 import { TicketStatus } from "../enums/TicketStatus";
 import { Image } from "./Image";
 import { TicketPriority } from "../enums/TicketPriority";
+import { Tag } from "./Tag";
 
 
 @Entity()
@@ -49,6 +50,21 @@ export class Ticket extends BaseEntity {
   @Column({ default: 0 })
   difficultyPoints: number;
 
+  @Column({ default: false })
+  isBlocked: boolean;
+
+  @Column({ nullable: true })
+  blockedReason: string;
+
+  @Column({ nullable: true })
+  pullRequestLink: string;
+
+  @Column({ nullable: true })
+  testLink: string;
+
+  @Column({ nullable: true })
+  branch: string;
+
   @ManyToOne(() => User, (user) => user.createdTickets, { nullable: false })
   creator: User;
 
@@ -61,6 +77,9 @@ export class Ticket extends BaseEntity {
 
   @OneToMany(() => Comment, (comment) => comment.ticket)
   comments: Comment[];
+  
+  @OneToMany(() => Tag, (tag) => tag.ticket)
+  tags: Tag[];
 
   @OneToMany(() => Test, (test) => test.ticket)
   tests: Test[];

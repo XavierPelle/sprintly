@@ -22,7 +22,7 @@ const fastify = Fastify({
         return {
           uploadsPath,
           filesCount: files.length,
-          files: files.slice(0, 10) // Premiers 10 fichiers
+          files: files.slice(0, 10)
         };
       } catch (error: any) {
         return {

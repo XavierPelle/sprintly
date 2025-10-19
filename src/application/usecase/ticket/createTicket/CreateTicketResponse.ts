@@ -12,7 +12,10 @@ export interface CreateTicketResponse {
   difficultyPoints: number;
   createdAt: Date;
   priority: TicketPriority;
-  
+  pullRequestLink: string;
+  testLink: string;
+  branch: string;
+
   creator: {
     id: number;
     firstName: string;

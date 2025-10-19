@@ -13,6 +13,16 @@ export interface GetTicketDetailsResponse {
   createdAt: Date;
   updatedAt: Date;
   priority: TicketPriority;
+  pullRequestLink: string;
+  testLink: string;
+  branch: string;
+  isBlocked: boolean
+    blockedReason: string
+  tags: {
+    id: number;
+    content: string;
+    color: string;
+  }[];
   
   creator: {
     id: number;
@@ -58,6 +68,12 @@ export interface GetTicketDetailsResponse {
     description: string;
     isValidated: boolean;
     createdAt: Date;
+      images: Array<{
+          id: number;
+          url: string;
+          filename: string;
+          displayOrder: number;
+      }>;
     user: {
       id: number;
       firstName: string;

@@ -40,5 +40,4 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Test, (test) => test.user)
   tests: Test[];
-
 }

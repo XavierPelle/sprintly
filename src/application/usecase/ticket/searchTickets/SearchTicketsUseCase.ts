@@ -22,14 +22,11 @@ export class SearchTicketsUseCase extends AbstractUseCase<
     command: SearchTicketsCommand
   ): Promise<Partial<SearchTicketsResponse>> {
     
-    // Build where clause
     const where: FindOptionsWhere<Ticket> | FindOptionsWhere<Ticket>[] = {};
 
-    // Text search in title, description, or key
     if (command.query && command.query.trim().length > 0) {
       const searchTerm = command.query.trim();
       
-      // Search in multiple fields using OR logic
       const orConditions: FindOptionsWhere<Ticket>[] = [
         { title: ILike(`%${searchTerm}%`) } as any,
         { description: ILike(`%${searchTerm}%`) } as any,
@@ -47,7 +44,6 @@ export class SearchTicketsUseCase extends AbstractUseCase<
       return await this.searchWithOrConditions(orConditions, baseFilters, command);
     }
 
-    // No text search, use simple where clause
     if (command.status) {
       (where as any).status = command.status;
     }
@@ -68,16 +64,14 @@ export class SearchTicketsUseCase extends AbstractUseCase<
       (where as any).sprint = { id: command.sprintId };
     }
 
-    // Get all tickets matching where clause
     const allTickets = await this.ticketRepository.findBy(
       where as FindOptionsWhere<Ticket>,
       {
-        relations: ['creator', 'assignee', 'sprint'],
+        relations: ['creator', 'assignee', 'sprint', 'tags'],
         order: { [command.sortBy]: command.sortOrder }
       }
     );
 
-    // Filter by difficulty points if specified
     let filteredTickets = allTickets;
     if (command.minPoints !== undefined || command.maxPoints !== undefined) {
       filteredTickets = allTickets.filter(ticket => {
@@ -91,7 +85,6 @@ export class SearchTicketsUseCase extends AbstractUseCase<
       });
     }
 
-    // Pagination
     const total = filteredTickets.length;
     const skip = (command.page - 1) * command.limit;
     const paginatedTickets = filteredTickets.slice(skip, skip + command.limit);
@@ -109,6 +102,17 @@ export class SearchTicketsUseCase extends AbstractUseCase<
         difficultyPoints: ticket.difficultyPoints,
         createdAt: ticket.createdAt,
         updatedAt: ticket.updatedAt,
+        pullRequestLink: ticket.pullRequestLink,
+        testLink: ticket.testLink,
+        priority: ticket.priority,
+        isBlocked: ticket.isBlocked,
+        blockedReason: ticket.blockedReason,
+
+      tags: ticket.tags.map(tag => ({ 
+        id: tag.id,
+        name: tag.content,
+        color: tag.color
+      })),
         
         creator: {
           id: ticket.creator.id,
@@ -231,6 +235,17 @@ export class SearchTicketsUseCase extends AbstractUseCase<
         difficultyPoints: ticket.difficultyPoints,
         createdAt: ticket.createdAt,
         updatedAt: ticket.updatedAt,
+        pullRequestLink: ticket.pullRequestLink,
+        testLink: ticket.testLink,
+        priority: ticket.priority,
+        isBlocked: ticket.isBlocked,
+        blockedReason: ticket.blockedReason,
+
+      tags: ticket.tags.map(tag => ({ 
+        id: tag.id,
+        name: tag.content,
+        color: tag.color
+      })),
         
         creator: {
           id: ticket.creator.id,

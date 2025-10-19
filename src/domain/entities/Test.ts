@@ -22,4 +22,5 @@ export class Test extends BaseEntity {
     @ManyToOne(() => Ticket, (ticket) => ticket.tests, { nullable: false })
     ticket: Ticket;
 
+
 }

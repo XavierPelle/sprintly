@@ -6,10 +6,9 @@ import { UserRepository } from "../../../../domain/repositories/UserRepository";
 import { SprintRepository } from "../../../../domain/repositories/SprintRepository";
 import { ApplicationException } from "../../../common/exceptions/ApplicationException";
 import { TicketStatus } from "../../../../domain/enums/TicketStatus";
+import GithubBranchUtils from "../../../Utils/GithubBranchUtils";
 
-/**
- * Use case to create a new ticket with auto-generated unique key
- */
+
 export class CreateTicketUseCase extends AbstractUseCase<
   CreateTicketCommand,
   CreateTicketResponse
@@ -76,6 +75,8 @@ export class CreateTicketUseCase extends AbstractUseCase<
     }
 
     const key = await this.generateUniqueKey(command.projectPrefix);
+    const branchName = GithubBranchUtils.generateBranchName(key, command.title);
+    const testLink = GithubBranchUtils.buildTestLinkFromBranch(branchName);
 
     const ticketData: any = {
       key,
@@ -85,7 +86,9 @@ export class CreateTicketUseCase extends AbstractUseCase<
       difficultyPoints: command.difficultyPoints,
       status: TicketStatus.TODO,
       creator: { id: command.creatorId },
-      priority: command.priority
+      priority: command.priority,
+      branch: branchName,
+      testLink: testLink
     };
 
     if (command.assignee) {
@@ -108,6 +111,9 @@ export class CreateTicketUseCase extends AbstractUseCase<
       difficultyPoints: ticket.difficultyPoints,
       createdAt: ticket.createdAt,
       priority: ticket.priority,
+      pullRequestLink: ticket.pullRequestLink,
+      testLink: ticket.testLink,
+      branch: ticket.branch,
       
       creator: {
         id: creator.id,
@@ -130,11 +136,7 @@ export class CreateTicketUseCase extends AbstractUseCase<
     };
   }
 
-  /**
-   * Generate unique ticket key (e.g., TG-001)
-   */
   private async generateUniqueKey(prefix: string): Promise<string> {
-    // Find the highest existing number for this prefix
     const allTickets = await this.ticketRepository.findAll();
     
     const ticketsWithPrefix = allTickets.filter(t => 
