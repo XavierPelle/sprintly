@@ -8,6 +8,7 @@ import { TestRepository } from "../../../../domain/repositories/TestRepository";
 import { CommentRepository } from "../../../../domain/repositories/CommentRepository";
 import { TicketStatus } from "../../../../domain/enums/TicketStatus";
 import { TicketType } from "../../../../domain/enums/TicketType";
+import { TicketPriority } from "../../../../domain/enums/TicketPriority";
 
 /**
  * Use case to get comprehensive project dashboard
@@ -22,8 +23,7 @@ export class GetProjectDashboardUseCase extends AbstractUseCase<
     private readonly ticketRepository: TicketRepository,
     private readonly userRepository: UserRepository,
     private readonly sprintRepository: SprintRepository,
-    private readonly testRepository: TestRepository,
-    private readonly commentRepository: CommentRepository
+    private readonly testRepository: TestRepository
   ) {
     super();
   }
@@ -31,362 +31,498 @@ export class GetProjectDashboardUseCase extends AbstractUseCase<
   protected async doExecute(
     command: GetProjectDashboardCommand
   ): Promise<Partial<GetProjectDashboardResponse>> {
-    
     const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
 
-    // Get all data
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+
+    // Récupérer toutes les données nécessaires
     const allTickets = await this.ticketRepository.findAll({
-      relations: ['creator', 'assignee', 'sprint', 'comments', 'tests']
+      relations: ["creator", "assignee", "sprint", "tests"],
     });
 
     const allUsers = await this.userRepository.findAll();
-
-    const allSprints = await this.sprintRepository.findAll({
-      relations: ['tickets']
+    const allTests = await this.testRepository.findAll({
+      relations: ["user", "ticket", "ticket.assignee"],
     });
 
-    const allTests = await this.testRepository.findAll();
-    const allComments = await this.commentRepository.findAll();
+    // 📦 PANEL 1: Ce qui a été mis en production hier
+    const productionDeployments = this.getProductionDeployments(
+      allTickets,
+      yesterday,
+      todayStart
+    );
 
-    // Overview
-    const activeSprints = allSprints.filter(s => 
-      s.startDate <= now && s.endDate >= now
-    ).length;
+    // 👥 PANEL 2: Activité de l'équipe
+    const teamActivity = this.getTeamActivity(
+      allTickets,
+      allUsers,
+      command.userId,
+      now
+    );
 
-    const completedSprints = allSprints.filter(s => 
-      s.endDate < now
-    ).length;
+    // 🧪 PANEL 3: Tests à faire
+    const pendingTests = this.getPendingTests(allTests, command.userId);
 
-    // Tickets analysis
-    const ticketsByStatus: Record<TicketStatus, number> = {} as any;
-    Object.values(TicketStatus).forEach(status => {
-      ticketsByStatus[status] = allTickets.filter(t => t.status === status).length;
-    });
+    // 📋 PANEL 4: Mes tickets actifs (hors TODO et PRODUCTION)
+    const myActiveTickets = this.getMyActiveTickets(
+      allTickets,
+      command.userId,
+      now
+    );
 
-    const ticketsByType: Record<TicketType, number> = {} as any;
-    Object.values(TicketType).forEach(type => {
-      ticketsByType[type] = allTickets.filter(t => t.type === type).length;
-    });
+    // ❌ PANEL 5: Mes tests KO
+    const myFailedTests = this.getMyFailedTests(allTickets, command.userId);
 
-    const totalPoints = allTickets.reduce((sum, t) => sum + t.difficultyPoints, 0);
-    
-    const completedStatuses = [TicketStatus.TEST_OK, TicketStatus.PRODUCTION];
-    const completedPoints = allTickets
-      .filter(t => completedStatuses.includes(t.status))
-      .reduce((sum, t) => sum + t.difficultyPoints, 0);
+    // 🚨 PANEL 6: Mes tickets urgents (HIGH/CRITICAL)
+    const myUrgentTickets = this.getMyUrgentTickets(
+      allTickets,
+      command.userId,
+      now
+    );
 
-    const averagePointsPerTicket = allTickets.length > 0 
-      ? Math.round((totalPoints / allTickets.length) * 10) / 10 
-      : 0;
+    // 🔔 PANEL 7: Alertes équipe (tickets bloqués et anciens)
+    const teamAlerts = this.getTeamAlerts(allTickets, now);
 
-    const unassignedCount = allTickets.filter(t => !t.assignee).length;
-    const withoutSprintCount = allTickets.filter(t => !t.sprint).length;
-
-    // Active sprints details
-    const activeSprintsDetails = allSprints
-      .filter(s => s.startDate <= now && s.endDate >= now)
-      .map(sprint => {
-        const sprintTotalPoints = sprint.tickets.reduce(
-          (sum, t) => sum + t.difficultyPoints, 
-          0
-        );
-        const sprintCompletedPoints = sprint.tickets
-          .filter(t => completedStatuses.includes(t.status))
-          .reduce((sum, t) => sum + t.difficultyPoints, 0);
-
-        const progressPercentage = sprintTotalPoints > 0
-          ? Math.round((sprintCompletedPoints / sprintTotalPoints) * 100)
-          : 0;
-
-        const daysRemaining = Math.ceil(
-          (sprint.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-        );
-
-        return {
-          id: sprint.id,
-          name: sprint.name,
-          startDate: sprint.startDate,
-          endDate: sprint.endDate,
-          totalPoints: sprintTotalPoints,
-          completedPoints: sprintCompletedPoints,
-          progressPercentage,
-          ticketsCount: sprint.tickets.length,
-          daysRemaining
-        };
-      })
-      .sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
-
-    // Upcoming sprints
-    const upcomingSprints = allSprints
-      .filter(s => s.startDate > now)
-      .map(sprint => ({
-        id: sprint.id,
-        name: sprint.name,
-        startDate: sprint.startDate,
-        endDate: sprint.endDate,
-        ticketsCount: sprint.tickets.length,
-        totalPoints: sprint.tickets.reduce((sum, t) => sum + t.difficultyPoints, 0)
-      }))
-      .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
-      .slice(0, 5);
-
-    // Recently completed sprints
-    const recentlyCompleted = allSprints
-      .filter(s => s.endDate < now)
-      .map(sprint => {
-        const sprintTotalPoints = sprint.tickets.reduce(
-          (sum, t) => sum + t.difficultyPoints, 
-          0
-        );
-        const sprintCompletedPoints = sprint.tickets
-          .filter(t => completedStatuses.includes(t.status))
-          .reduce((sum, t) => sum + t.difficultyPoints, 0);
-
-        const completionRate = sprintTotalPoints > 0
-          ? Math.round((sprintCompletedPoints / sprintTotalPoints) * 100)
-          : 0;
-
-        const durationMs = sprint.endDate.getTime() - sprint.startDate.getTime();
-        const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
-        const velocity = durationDays > 0
-          ? Math.round((sprintCompletedPoints / durationDays) * 10) / 10
-          : 0;
-
-        return {
-          id: sprint.id,
-          name: sprint.name,
-          endDate: sprint.endDate,
-          completionRate,
-          velocity
-        };
-      })
-      .sort((a, b) => b.endDate.getTime() - a.endDate.getTime())
-      .slice(0, 5);
-
-    // Team analysis
-    const userStats = allUsers.map(user => {
-      const assignedTickets = allTickets.filter(t => t.assignee?.id === user.id);
-      const completedTickets = assignedTickets.filter(t => 
-        completedStatuses.includes(t.status)
-      );
-      const commentsCount = allComments.filter(c => c.user.id === user.id).length;
-      const testsCount = allTests.filter(t => t.user.id === user.id).length;
-
-      const assignedPoints = assignedTickets.reduce(
-        (sum, t) => sum + t.difficultyPoints, 
-        0
-      );
-      const completedPoints = completedTickets.reduce(
-        (sum, t) => sum + t.difficultyPoints, 
-        0
-      );
-
-      return {
-        id: user.id,
-        name: `${user.firstName} ${user.lastName}`,
-        assignedTickets: assignedTickets.length,
-        completedTickets: completedTickets.length,
-        commentsCount,
-        testsCount,
-        assignedPoints,
-        completedPoints
-      };
-    });
-
-    const mostActiveUsers = userStats
-      .sort((a, b) => {
-        const scoreA = a.completedTickets * 3 + a.commentsCount + a.testsCount;
-        const scoreB = b.completedTickets * 3 + b.commentsCount + b.testsCount;
-        return scoreB - scoreA;
-      })
-      .slice(0, 10)
-      .map(u => ({
-        id: u.id,
-        name: u.name,
-        assignedTickets: u.assignedTickets,
-        completedTickets: u.completedTickets,
-        commentsCount: u.commentsCount,
-        testsCount: u.testsCount
-      }));
-
-    const totalAssignedPoints = userStats.reduce((sum, u) => sum + u.assignedPoints, 0);
-
-    const workloadDistribution = userStats
-      .filter(u => u.assignedTickets > 0)
-      .map(u => ({
-        userId: u.id,
-        userName: u.name,
-        assignedPoints: u.assignedPoints,
-        completedPoints: u.completedPoints,
-        workloadPercentage: totalAssignedPoints > 0
-          ? Math.round((u.assignedPoints / totalAssignedPoints) * 100)
-          : 0
-      }))
-      .sort((a, b) => b.assignedPoints - a.assignedPoints);
-
-    // Quality metrics
-    const validatedTests = allTests.filter(t => t.isValidated).length;
-    const validationRate = allTests.length > 0
-      ? Math.round((validatedTests / allTests.length) * 100)
-      : 0;
-
-    const averageCommentsPerTicket = allTickets.length > 0
-      ? Math.round((allComments.length / allTickets.length) * 10) / 10
-      : 0;
-
-    const ticketsWithTests = new Set(allTests.map(t => t.ticket.id)).size;
-    const testCoverage = allTickets.length > 0
-      ? Math.round((ticketsWithTests / allTickets.length) * 100)
-      : 0;
-
-    // Trends (if historical data requested)
-    let trends = undefined;
-    if (command.includeHistorical) {
-      trends = this.calculateTrends(allTickets, allSprints);
-    }
+    // 📊 PANEL 8: Résumé sprint actif
+    const currentSprintSummary = await this.getCurrentSprintSummary(now);
 
     return {
-      overview: {
-        totalTickets: allTickets.length,
-        totalUsers: allUsers.length,
-        totalSprints: allSprints.length,
-        activeSprints,
-        completedSprints
-      },
-
-      tickets: {
-        byStatus: ticketsByStatus,
-        byType: ticketsByType,
-        totalPoints,
-        completedPoints,
-        averagePointsPerTicket,
-        unassignedCount,
-        withoutSprintCount
-      },
-
-      sprints: {
-        active: activeSprintsDetails,
-        upcoming: upcomingSprints,
-        recentlyCompleted
-      },
-
-      team: {
-        mostActiveUsers,
-        workloadDistribution
-      },
-
-      quality: {
-        totalTests: allTests.length,
-        validatedTests,
-        validationRate,
-        totalComments: allComments.length,
-        averageCommentsPerTicket,
-        ticketsWithTests,
-        testCoverage
-      },
-
-      trends
+      productionDeployments,
+      teamActivity,
+      pendingTests,
+      myActiveTickets,
+      myFailedTests,
+      myUrgentTickets,
+      teamAlerts,
+      currentSprintSummary,
     };
   }
 
   /**
-   * Calculate historical trends
+   * 📦 Récupère les déploiements en production d'hier
    */
-  private calculateTrends(tickets: any[], sprints: any[]): any {
-    const now = new Date();
-    const twelveWeeksAgo = new Date(now);
-    twelveWeeksAgo.setDate(now.getDate() - 84); // 12 weeks
+  private getProductionDeployments(
+    tickets: any[],
+    yesterday: Date,
+    todayStart: Date
+  ) {
+    const deployedYesterday = tickets
+      .filter((t) => {
+        if (t.status !== TicketStatus.PRODUCTION) return false;
+        const updatedAt = new Date(t.updatedAt);
+        return updatedAt >= yesterday && updatedAt < todayStart;
+      })
+      .map((t) => ({
+        ticketId: t.id,
+        ticketKey: t.key,
+        title: t.title,
+        deployedBy: {
+          id: t.assignee?.id || t.creator.id,
+          name: t.assignee
+            ? `${t.assignee.firstName} ${t.assignee.lastName}`
+            : `${t.creator.firstName} ${t.creator.lastName}`,
+        },
+        deployedAt: new Date(t.updatedAt),
+        branch: t.branch || "N/A",
+        pullRequestLink: t.pullRequestLink,
+        priority: t.priority,
+      }))
+      .sort((a, b) => b.deployedAt.getTime() - a.deployedAt.getTime());
 
-    // Group by week
-    const weeklyData = new Map<string, { completed: number; created: number; points: number }>();
+    return {
+      yesterday: deployedYesterday,
+      count: deployedYesterday.length,
+    };
+  }
 
-    // Initialize weeks
-    for (let i = 0; i < 12; i++) {
-      const weekStart = new Date(twelveWeeksAgo);
-      weekStart.setDate(twelveWeeksAgo.getDate() + (i * 7));
-      const weekKey = this.getWeekKey(weekStart);
-      weeklyData.set(weekKey, { completed: 0, created: 0, points: 0 });
-    }
+  /**
+   * 👥 Récupère l'activité de l'équipe (sans l'utilisateur courant)
+   */
+  private getTeamActivity(
+    tickets: any[],
+    users: any[],
+    currentUserId: number,
+    now: Date
+  ) {
+    const activeStatuses = [
+      TicketStatus.IN_PROGRESS,
+      TicketStatus.REVIEW,
+      TicketStatus.CHANGE_REQUEST,
+      TicketStatus.TEST,
+      TicketStatus.TEST_KO,
+      TicketStatus.TEST_OK,
+    ];
 
-    // Count created tickets by week
-    tickets.forEach(ticket => {
-      const createdDate = new Date(ticket.createdAt);
-      if (createdDate >= twelveWeeksAgo) {
-        const weekKey = this.getWeekKey(createdDate);
-        const data = weeklyData.get(weekKey);
-        if (data) {
-          data.created++;
+    const otherUsers = users.filter((u) => u.id !== currentUserId);
+
+    const members = otherUsers
+      .map((user) => {
+        const userTickets = tickets
+          .filter(
+            (t) =>
+              t.assignee?.id === user.id && activeStatuses.includes(t.status)
+          )
+          .map((t) => {
+            const updatedAt = new Date(t.updatedAt);
+            const daysSinceStarted = Math.floor(
+              (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+            );
+
+            return {
+              ticketId: t.id,
+              ticketKey: t.key,
+              title: t.title,
+              status: t.status,
+              priority: t.priority,
+              daysSinceStarted,
+            };
+          })
+          .sort((a, b) => b.priority.localeCompare(a.priority));
+
+        return {
+          userId: user.id,
+          userName: `${user.firstName} ${user.lastName}`,
+          currentTickets: userTickets,
+          ticketCount: userTickets.length,
+        };
+      })
+      .filter((m) => m.ticketCount > 0)
+      .sort((a, b) => b.ticketCount - a.ticketCount);
+
+    const totalActiveTickets = members.reduce(
+      (sum, m) => sum + m.ticketCount,
+      0
+    );
+
+    return {
+      members,
+      totalActiveTickets,
+    };
+  }
+
+  /**
+   * 🧪 Récupère les tests en attente (non validés)
+   */
+  private getPendingTests(tests: any[], currentUserId: number) {
+    const pending = tests
+      .filter((test) => !test.isValidated)
+      .map((test) => ({
+        testId: test.id,
+        ticketId: test.ticket.id,
+        ticketKey: test.ticket.key,
+        ticketTitle: test.ticket.title,
+        description: test.description,
+        createdBy: {
+          id: test.user.id,
+          name: `${test.user.firstName} ${test.user.lastName}`,
+        },
+        createdAt: new Date(test.createdAt),
+        priority: test.ticket.priority,
+        hasImages: test.images && test.images.length > 0,
+      }))
+      .sort((a, b) => {
+        // Prioriser par priorité puis par date
+        if (a.priority !== b.priority) {
+          return b.priority.localeCompare(a.priority);
         }
-      }
-    });
-
-    // Count completed tickets by week (using updatedAt as proxy for completion)
-    const completedStatuses = [TicketStatus.TEST_OK, TicketStatus.PRODUCTION];
-    tickets
-      .filter(t => completedStatuses.includes(t.status))
-      .forEach(ticket => {
-        const updatedDate = new Date(ticket.updatedAt);
-        if (updatedDate >= twelveWeeksAgo) {
-          const weekKey = this.getWeekKey(updatedDate);
-          const data = weeklyData.get(weekKey);
-          if (data) {
-            data.completed++;
-            data.points += ticket.difficultyPoints;
-          }
-        }
+        return b.createdAt.getTime() - a.createdAt.getTime();
       });
 
-    // Convert to arrays
-    const velocityByWeek = Array.from(weeklyData.entries())
-      .map(([weekKey, data]) => ({
-        weekStart: this.parseWeekKey(weekKey),
-        pointsCompleted: data.points,
-        ticketsCompleted: data.completed
-      }))
-      .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
-
-    const ticketCreationByWeek = Array.from(weeklyData.entries())
-      .map(([weekKey, data]) => ({
-        weekStart: this.parseWeekKey(weekKey),
-        ticketsCreated: data.created
-      }))
-      .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
-
     return {
-      velocityByWeek,
-      ticketCreationByWeek
+      tests: pending,
+      count: pending.length,
     };
   }
 
   /**
-   * Get week key (YYYY-Www format)
+   * 📋 Récupère mes tickets actifs (hors TODO et PRODUCTION)
    */
-  private getWeekKey(date: Date): string {
-    const year = date.getFullYear();
-    const weekNum = this.getWeekNumber(date);
-    return `${year}-W${String(weekNum).padStart(2, '0')}`;
+  private getMyActiveTickets(tickets: any[], userId: number, now: Date) {
+    const excludedStatuses = [TicketStatus.TODO, TicketStatus.PRODUCTION];
+
+    const myTickets = tickets
+      .filter(
+        (t) =>
+          t.assignee?.id === userId && !excludedStatuses.includes(t.status)
+      )
+      .map((t) => {
+        const updatedAt = new Date(t.updatedAt);
+        const daysSinceLastUpdate = Math.floor(
+          (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        return {
+          ticketId: t.id,
+          ticketKey: t.key,
+          title: t.title,
+          status: t.status,
+          priority: t.priority,
+          difficultyPoints: t.difficultyPoints,
+          isBlocked: t.isBlocked,
+          blockedReason: t.blockedReason,
+          daysSinceLastUpdate,
+          hasTests: t.tests && t.tests.length > 0,
+          testCount: t.tests ? t.tests.length : 0,
+          branch: t.branch,
+        };
+      })
+      .sort((a, b) => {
+        // Bloqués en premier, puis par priorité
+        if (a.isBlocked !== b.isBlocked) {
+          return a.isBlocked ? -1 : 1;
+        }
+        return b.priority.localeCompare(a.priority);
+      });
+
+    const byStatus: Record<TicketStatus, number> = {} as any;
+    Object.values(TicketStatus).forEach((status) => {
+      byStatus[status] = myTickets.filter((t) => t.status === status).length;
+    });
+
+    const totalPoints = myTickets.reduce(
+      (sum, t) => sum + t.difficultyPoints,
+      0
+    );
+
+    return {
+      tickets: myTickets,
+      byStatus,
+      totalPoints,
+    };
   }
 
   /**
-   * Parse week key back to date
+   * ❌ Récupère mes tickets avec tests KO
    */
-  private parseWeekKey(weekKey: string): Date {
-    const [year, week] = weekKey.split('-W').map(Number);
-    const jan4 = new Date(year, 0, 4);
-    const weekStart = new Date(jan4);
-    weekStart.setDate(jan4.getDate() - jan4.getDay() + 1 + (week - 1) * 7);
-    return weekStart;
+  private getMyFailedTests(tickets: any[], userId: number) {
+    const ticketsWithFailedTests = tickets
+      .filter(
+        (t) =>
+          t.assignee?.id === userId &&
+          (t.status === TicketStatus.TEST_KO ||
+            (t.tests &&
+              t.tests.some((test: any) => !test.isValidated)))
+      )
+      .map((t) => {
+        const failedTests = (t.tests || [])
+          .filter((test: any) => !test.isValidated)
+          .map((test: any) => ({
+            testId: test.id,
+            description: test.description,
+            createdAt: new Date(test.createdAt),
+          }));
+
+        return {
+          ticketId: t.id,
+          ticketKey: t.key,
+          title: t.title,
+          failedTests,
+          failedTestCount: failedTests.length,
+        };
+      })
+      .filter((t) => t.failedTestCount > 0)
+      .sort((a, b) => b.failedTestCount - a.failedTestCount);
+
+    const totalFailedTests = ticketsWithFailedTests.reduce(
+      (sum, t) => sum + t.failedTestCount,
+      0
+    );
+
+    return {
+      tickets: ticketsWithFailedTests,
+      totalFailedTests,
+    };
   }
 
   /**
-   * Get ISO week number
+   * 🚨 Récupère mes tickets urgents (CRITICAL et HIGH)
    */
-  private getWeekNumber(date: Date): number {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-    const yearStart = new Date(d.getFullYear(), 0, 1);
-    const weekNum = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    return weekNum;
+  private getMyUrgentTickets(tickets: any[], userId: number, now: Date) {
+    const myUrgentTickets = tickets.filter(
+      (t) =>
+        t.assignee?.id === userId &&
+        (t.priority === TicketPriority.CRITICAL ||
+          t.priority === TicketPriority.HIGH) &&
+        t.status !== TicketStatus.PRODUCTION
+    );
+
+    const critical = myUrgentTickets
+      .filter((t) => t.priority === TicketPriority.CRITICAL)
+      .map((t) => this.mapUrgentTicket(t, now));
+
+    const high = myUrgentTickets
+      .filter((t) => t.priority === TicketPriority.HIGH)
+      .map((t) => this.mapUrgentTicket(t, now));
+
+    return {
+      critical,
+      high,
+      totalUrgent: critical.length + high.length,
+    };
+  }
+
+  private mapUrgentTicket(ticket: any, now: Date) {
+    const createdAt = new Date(ticket.createdAt);
+    const daysSinceCreated = Math.floor(
+      (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    return {
+      ticketId: ticket.id,
+      ticketKey: ticket.key,
+      title: ticket.title,
+      status: ticket.status,
+      daysSinceCreated,
+      isBlocked: ticket.isBlocked,
+    };
+  }
+
+  /**
+   * 🔔 Récupère les alertes d'équipe (tickets bloqués et anciens)
+   */
+  private getTeamAlerts(tickets: any[], now: Date) {
+    const STALE_THRESHOLD_DAYS = 7;
+
+    // Tickets bloqués
+    const blockedTickets = tickets
+      .filter((t) => t.isBlocked && t.status !== TicketStatus.PRODUCTION)
+      .map((t) => {
+        const updatedAt = new Date(t.updatedAt);
+        const daysSinceBlocked = Math.floor(
+          (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        return {
+          ticketId: t.id,
+          ticketKey: t.key,
+          title: t.title,
+          assignee: t.assignee
+            ? {
+                id: t.assignee.id,
+                name: `${t.assignee.firstName} ${t.assignee.lastName}`,
+              }
+            : null,
+          blockedReason: t.blockedReason || "Raison non spécifiée",
+          priority: t.priority,
+          daysSinceBlocked,
+        };
+      })
+      .filter((t) => t.assignee !== null)
+      .sort((a, b) => b.daysSinceBlocked - a.daysSinceBlocked);
+
+    // Tickets anciens (pas mis à jour depuis 7+ jours)
+    const staleTickets = tickets
+      .filter((t) => {
+        if (
+          t.status === TicketStatus.PRODUCTION ||
+          t.status === TicketStatus.TODO
+        )
+          return false;
+        const updatedAt = new Date(t.updatedAt);
+        const daysSinceLastUpdate = Math.floor(
+          (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        return daysSinceLastUpdate >= STALE_THRESHOLD_DAYS;
+      })
+      .map((t) => {
+        const updatedAt = new Date(t.updatedAt);
+        const daysSinceLastUpdate = Math.floor(
+          (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        return {
+          ticketId: t.id,
+          ticketKey: t.key,
+          title: t.title,
+          assignee: t.assignee
+            ? {
+                id: t.assignee.id,
+                name: `${t.assignee.firstName} ${t.assignee.lastName}`,
+              }
+            : null,
+          status: t.status,
+          daysSinceLastUpdate,
+        };
+      })
+      .sort((a, b) => b.daysSinceLastUpdate - a.daysSinceLastUpdate)
+      .slice(0, 10);
+
+    return {
+      blockedTickets,
+      staleTickets,
+    };
+  }
+
+  /**
+   * 📊 Récupère le résumé du sprint actif
+   */
+  private async getCurrentSprintSummary(now: Date) {
+    const activeSprints = await this.sprintRepository.findAll({
+      relations: ["tickets"],
+    });
+
+    const currentSprint = activeSprints.find(
+      (s) => s.startDate <= now && s.endDate >= now
+    );
+
+    if (!currentSprint) {
+      return {
+        sprintName: null,
+        daysRemaining: null,
+        completionPercentage: 0,
+        velocity: 0,
+        burndownTrend: null,
+      };
+    }
+
+    const completedStatuses = [TicketStatus.TEST_OK, TicketStatus.PRODUCTION];
+    const totalPoints = currentSprint.tickets.reduce(
+      (sum, t) => sum + t.difficultyPoints,
+      0
+    );
+    const completedPoints = currentSprint.tickets
+      .filter((t) => completedStatuses.includes(t.status))
+      .reduce((sum, t) => sum + t.difficultyPoints, 0);
+
+    const completionPercentage =
+      totalPoints > 0 ? Math.round((completedPoints / totalPoints) * 100) : 0;
+
+    const daysRemaining = Math.ceil(
+      (currentSprint.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    const sprintDuration = Math.ceil(
+      (currentSprint.endDate.getTime() - currentSprint.startDate.getTime()) /
+        (1000 * 60 * 60 * 24)
+    );
+    const daysElapsed = sprintDuration - daysRemaining;
+    const expectedCompletion =
+      daysElapsed > 0 ? (daysElapsed / sprintDuration) * 100 : 0;
+
+    let burndownTrend: "ahead" | "on-track" | "behind" | null = null;
+    if (completionPercentage > expectedCompletion + 10) {
+      burndownTrend = "ahead";
+    } else if (completionPercentage < expectedCompletion - 10) {
+      burndownTrend = "behind";
+    } else {
+      burndownTrend = "on-track";
+    }
+
+    const velocity =
+      daysElapsed > 0
+        ? Math.round((completedPoints / daysElapsed) * 10) / 10
+        : 0;
+
+    return {
+      sprintName: currentSprint.name,
+      daysRemaining,
+      completionPercentage,
+      velocity,
+      burndownTrend,
+    };
   }
 }

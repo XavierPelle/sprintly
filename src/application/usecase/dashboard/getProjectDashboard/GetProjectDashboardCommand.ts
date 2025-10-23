@@ -5,9 +5,7 @@ import { Command } from "../../../common/usecase/Command";
  * No parameters needed as it's a global view
  */
 export class GetProjectDashboardCommand implements Command {
-  constructor(public readonly includeHistorical: boolean = false) {}
+  constructor(public readonly userId: number) {}
 
-  validate(): void {
-    // No validation needed
-  }
+  validate(): void {}
 }

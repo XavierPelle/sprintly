@@ -23,25 +23,20 @@ export class DashboardController {
    * GET /dashboard/project - Get project-wide dashboard
    */
   async getProjectDashboard(
-    request: FastifyRequest<{
-      Querystring: {
-        includeHistorical?: boolean;
-      };
-    }>,
+    request: FastifyRequest,
     reply: FastifyReply
   ): Promise<void> {
     try {
-      const includeHistorical = request.query.includeHistorical === true;
+      const userId = request.user!.userId;
 
       const useCase = new GetProjectDashboardUseCase(
         this.ticketRepository,
         this.userRepository,
         this.sprintRepository,
-        this.testRepository,
-        this.commentRepository
+        this.testRepository
       );
 
-      const command = new GetProjectDashboardCommand(includeHistorical);
+      const command = new GetProjectDashboardCommand(userId);
       const response = await useCase.execute(command);
 
       if (!response.isSuccess()) {
