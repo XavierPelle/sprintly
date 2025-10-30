@@ -18,6 +18,7 @@ import { TicketStatus } from "../enums/TicketStatus";
 import { Image } from "./Image";
 import { TicketPriority } from "../enums/TicketPriority";
 import { Tag } from "./Tag";
+import { TicketHistory } from "./TicketHistory";
 
 
 @Entity()
@@ -83,4 +84,7 @@ export class Ticket extends BaseEntity {
 
   @OneToMany(() => Test, (test) => test.ticket)
   tests: Test[];
+
+  @OneToMany(() => TicketHistory, (history) => history.ticket)
+  histories: TicketHistory[];
 }

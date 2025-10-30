@@ -11,7 +11,8 @@ export class CreateTestForTicketCommand implements Command {
             filename: string;
             mimetype: string;
             data: Buffer;
-        }>
+        }>,
+        public readonly displayOrders?: number[] | string
     ) {}
 
     validate(): void {
@@ -31,8 +32,8 @@ export class CreateTestForTicketCommand implements Command {
             throw new InvalidCommandException('Test description must be at least 10 characters');
         }
 
-        if (this.description.length > 10000) {
-            throw new InvalidCommandException('Test description must not exceed 10000 characters');
+        if (this.description.length > 50000) {
+            throw new InvalidCommandException('Test description must not exceed 50000 characters');
         }
 
         if (this.imageFiles && this.imageFiles.length > 10) {
@@ -42,6 +43,33 @@ export class CreateTestForTicketCommand implements Command {
         const validImageTypes = ['AVATAR', 'TICKET_ATTACHMENT', 'TEST_ATTACHMENT'];
         if (!validImageTypes.includes(this.imageType)) {
             throw new InvalidCommandException('Invalid image type');
+        }
+
+        if (this.displayOrders) {
+            let orders: number[] = [];
+            
+            try {
+                orders = typeof this.displayOrders === 'string' 
+                    ? JSON.parse(this.displayOrders)
+                    : this.displayOrders;
+            } catch (error) {
+                throw new InvalidCommandException('Invalid displayOrders format');
+            }
+
+            if (!Array.isArray(orders)) {
+                throw new InvalidCommandException('displayOrders must be an array');
+            }
+
+            if (this.imageFiles && orders.length !== this.imageFiles.length) {
+                throw new InvalidCommandException(
+                    `displayOrders length (${orders.length}) must match imageFiles length (${this.imageFiles.length})`
+                );
+            }
+
+            const hasInvalidOrder = orders.some(order => typeof order !== 'number' || order <= 0);
+            if (hasInvalidOrder) {
+                throw new InvalidCommandException('All displayOrders must be positive numbers');
+            }
         }
     }
 }

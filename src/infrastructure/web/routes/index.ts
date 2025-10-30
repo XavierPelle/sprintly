@@ -36,136 +36,205 @@ import { SprintRouter } from "./SprintRouter";
 import { TestRouter } from "./TestRouter";
 import { ImageRouter } from "./ImageRouter";
 import { DashboardRouter } from "./DashboardRouter";
+import { TicketHistoryRepository } from "../../../domain/repositories/TicketHistoryRepository";
+import { TicketHistory } from "../../../domain/entities/TicketHistory";
+import { TicketHistoryController } from "../../../application/controllers/TicketHistoryController";
+import { TicketHistoryRouter } from "./TicketHistoryRouter";
 
 export class RouteFactory {
-    constructor(private readonly dataSource: DataSource) {}
+  constructor(private readonly dataSource: DataSource) {}
 
-    public createApiPlugin(): FastifyPluginAsync {
-        return async (fastify: FastifyInstance) => {
-            await fastify.register(this.createUserPlugin(), { prefix: "/users" });
-            await fastify.register(this.createTicketPlugin(), { prefix: "/tickets" });
-            await fastify.register(this.createCommentPlugin(), { prefix: "/comments" });
-            await fastify.register(this.createSprintPlugin(), { prefix: "/sprints" });
-            await fastify.register(this.createTestPlugin(), { prefix: "/tests" });
-            await fastify.register(this.createImagePlugin(), { prefix: "/images" });
-            await fastify.register(this.createDashboardPlugin(), { prefix: "/dashboard" });
-        };
-    }
+  public createApiPlugin(): FastifyPluginAsync {
+    return async (fastify: FastifyInstance) => {
+      await fastify.register(this.createUserPlugin(), { prefix: "/users" });
+      await fastify.register(this.createTicketPlugin(), { prefix: "/tickets" });
+      await fastify.register(this.createCommentPlugin(), { prefix: "/comments",});
+      await fastify.register(this.createSprintPlugin(), { prefix: "/sprints" });
+      await fastify.register(this.createTestPlugin(), { prefix: "/tests" });
+      await fastify.register(this.createImagePlugin(), { prefix: "/images" });
+      await fastify.register(this.createDashboardPlugin(), {prefix: "/dashboard",});
+      await fastify.register(this.createTicketHistoryPlugin(), {prefix: "tickets-histories"})
+    };
+  }
 
-    private createUserPlugin(): FastifyPluginAsync {
-        const userRepository = new UserRepository(this.dataSource.getRepository(User));
-        const ticketRepository = new TicketRepository(this.dataSource.getRepository(Ticket));
-        const sprintRepository = new SprintRepository(this.dataSource.getRepository(Sprint));
-        const testRepository = new TestRepository(this.dataSource.getRepository(Test));
-        const commentRepository = new CommentRepository(this.dataSource.getRepository(Comment));
+  private createUserPlugin(): FastifyPluginAsync {
+    const userRepository = new UserRepository(
+      this.dataSource.getRepository(User)
+    );
+    const ticketRepository = new TicketRepository(
+      this.dataSource.getRepository(Ticket)
+    );
+    const sprintRepository = new SprintRepository(
+      this.dataSource.getRepository(Sprint)
+    );
+    const testRepository = new TestRepository(
+      this.dataSource.getRepository(Test)
+    );
+    const commentRepository = new CommentRepository(
+      this.dataSource.getRepository(Comment)
+    );
 
-        const controller = new UserController(
-            userRepository,
-            ticketRepository,
-            sprintRepository,
-            testRepository,
-            commentRepository
-        );
+    const controller = new UserController(
+      userRepository,
+      ticketRepository,
+      sprintRepository,
+      testRepository,
+      commentRepository
+    );
 
-        const router = new UserRouter(controller);
-        return router.plugin;
-    }
+    const router = new UserRouter(controller);
+    return router.plugin;
+  }
 
-    private createTicketPlugin(): FastifyPluginAsync {
-        const ticketRepository = new TicketRepository(this.dataSource.getRepository(Ticket));
-        const userRepository = new UserRepository(this.dataSource.getRepository(User));
-        const sprintRepository = new SprintRepository(this.dataSource.getRepository(Sprint));
-        const tagRepository = new TagRepository(this.dataSource.getRepository(Tag));
+  private createTicketPlugin(): FastifyPluginAsync {
+    const ticketRepository = new TicketRepository(
+      this.dataSource.getRepository(Ticket)
+    );
+    const userRepository = new UserRepository(
+      this.dataSource.getRepository(User)
+    );
+    const sprintRepository = new SprintRepository(
+      this.dataSource.getRepository(Sprint)
+    );
+    const tagRepository = new TagRepository(this.dataSource.getRepository(Tag));
+    const ticketHistoryRepository = new TicketHistoryRepository(
+      this.dataSource.getRepository(TicketHistory)
+    );
 
-        const controller = new TicketController(
-            ticketRepository,
-            userRepository,
-            sprintRepository,
-            tagRepository
-        );
+    const controller = new TicketController(
+      ticketRepository,
+      userRepository,
+      sprintRepository,
+      tagRepository,
+      ticketHistoryRepository
+    );
 
-        const router = new TicketRouter(controller);
-        return router.plugin;
-    }
+    const router = new TicketRouter(controller);
+    return router.plugin;
+  }
 
-    private createCommentPlugin(): FastifyPluginAsync {
-        const commentRepository = new CommentRepository(this.dataSource.getRepository(Comment));
-        const ticketRepository = new TicketRepository(this.dataSource.getRepository(Ticket));
-        const userRepository = new UserRepository(this.dataSource.getRepository(User));
+  private createCommentPlugin(): FastifyPluginAsync {
+    const commentRepository = new CommentRepository(
+      this.dataSource.getRepository(Comment)
+    );
+    const ticketRepository = new TicketRepository(
+      this.dataSource.getRepository(Ticket)
+    );
+    const userRepository = new UserRepository(
+      this.dataSource.getRepository(User)
+    );
 
-        const controller = new CommentController(
-            commentRepository,
-            ticketRepository,
-            userRepository
-        );
+    const controller = new CommentController(
+      commentRepository,
+      ticketRepository,
+      userRepository
+    );
 
-        const router = new CommentRouter(controller);
-        return router.plugin;
-    }
+    const router = new CommentRouter(controller);
+    return router.plugin;
+  }
 
-    private createSprintPlugin(): FastifyPluginAsync {
-        const sprintRepository = new SprintRepository(this.dataSource.getRepository(Sprint));
-        const ticketRepository = new TicketRepository(this.dataSource.getRepository(Ticket));
+  private createSprintPlugin(): FastifyPluginAsync {
+    const sprintRepository = new SprintRepository(
+      this.dataSource.getRepository(Sprint)
+    );
+    const ticketRepository = new TicketRepository(
+      this.dataSource.getRepository(Ticket)
+    );
 
-        const controller = new SprintController(
-            sprintRepository,
-            ticketRepository
-        );
+    const controller = new SprintController(sprintRepository, ticketRepository);
 
-        const router = new SprintRouter(controller);
-        return router.plugin;
-    }
+    const router = new SprintRouter(controller);
+    return router.plugin;
+  }
 
-    private createTestPlugin(): FastifyPluginAsync {
-        const testRepository = new TestRepository(this.dataSource.getRepository(Test));
-        const ticketRepository = new TicketRepository(this.dataSource.getRepository(Ticket));
-        const userRepository = new UserRepository(this.dataSource.getRepository(User));
-        const imageRepository = new ImageRepository(this.dataSource.getRepository(Image));
+  private createTestPlugin(): FastifyPluginAsync {
+    const testRepository = new TestRepository(
+      this.dataSource.getRepository(Test)
+    );
+    const ticketRepository = new TicketRepository(
+      this.dataSource.getRepository(Ticket)
+    );
+    const userRepository = new UserRepository(
+      this.dataSource.getRepository(User)
+    );
+    const imageRepository = new ImageRepository(
+      this.dataSource.getRepository(Image)
+    );
 
-        const controller = new TestController(
-            testRepository,
-            ticketRepository,
-            userRepository,
-            imageRepository
-        );
+    const controller = new TestController(
+      testRepository,
+      ticketRepository,
+      userRepository,
+      imageRepository
+    );
 
-        const router = new TestRouter(controller);
-        return router.plugin;
-    }
+    const router = new TestRouter(controller);
+    return router.plugin;
+  }
 
-    private createImagePlugin(): FastifyPluginAsync {
-        const imageRepository = new ImageRepository(this.dataSource.getRepository(Image));
-        const ticketRepository = new TicketRepository(this.dataSource.getRepository(Ticket));
-        const testRepository = new TestRepository(this.dataSource.getRepository(Test));
-        const userRepository = new UserRepository(this.dataSource.getRepository(User));
+  private createImagePlugin(): FastifyPluginAsync {
+    const imageRepository = new ImageRepository(
+      this.dataSource.getRepository(Image)
+    );
+    const ticketRepository = new TicketRepository(
+      this.dataSource.getRepository(Ticket)
+    );
+    const testRepository = new TestRepository(
+      this.dataSource.getRepository(Test)
+    );
+    const userRepository = new UserRepository(
+      this.dataSource.getRepository(User)
+    );
 
-        const controller = new ImageController(
-            imageRepository,
-            ticketRepository,
-            testRepository,
-            userRepository
-        );
+    const controller = new ImageController(
+      imageRepository,
+      ticketRepository,
+      testRepository,
+      userRepository
+    );
 
-        const router = new ImageRouter(controller);
-        return router.plugin;
-    }
+    const router = new ImageRouter(controller);
+    return router.plugin;
+  }
 
-    private createDashboardPlugin(): FastifyPluginAsync {
-        const ticketRepository = new TicketRepository(this.dataSource.getRepository(Ticket));
-        const userRepository = new UserRepository(this.dataSource.getRepository(User));
-        const sprintRepository = new SprintRepository(this.dataSource.getRepository(Sprint));
-        const testRepository = new TestRepository(this.dataSource.getRepository(Test));
-        const commentRepository = new CommentRepository(this.dataSource.getRepository(Comment));
+  private createDashboardPlugin(): FastifyPluginAsync {
+    const ticketRepository = new TicketRepository(
+      this.dataSource.getRepository(Ticket)
+    );
+    const userRepository = new UserRepository(
+      this.dataSource.getRepository(User)
+    );
+    const sprintRepository = new SprintRepository(
+      this.dataSource.getRepository(Sprint)
+    );
+    const testRepository = new TestRepository(
+      this.dataSource.getRepository(Test)
+    );
+    const commentRepository = new CommentRepository(
+      this.dataSource.getRepository(Comment)
+    );
 
-        const controller = new DashboardController(
-            ticketRepository,
-            userRepository,
-            sprintRepository,
-            testRepository,
-            commentRepository
-        );
+    const controller = new DashboardController(
+      ticketRepository,
+      userRepository,
+      sprintRepository,
+      testRepository,
+      commentRepository
+    );
 
-        const router = new DashboardRouter(controller);
-        return router.plugin;
-    }
+    const router = new DashboardRouter(controller);
+    return router.plugin;
+  }
+
+  private createTicketHistoryPlugin(): FastifyPluginAsync {
+    const ticketHistoryRepository = new TicketHistoryRepository(
+      this.dataSource.getRepository(TicketHistory)
+    );
+
+    const controller = new TicketHistoryController(ticketHistoryRepository);
+
+    const router = new TicketHistoryRouter(controller);
+    return router.plugin;
+}
 }

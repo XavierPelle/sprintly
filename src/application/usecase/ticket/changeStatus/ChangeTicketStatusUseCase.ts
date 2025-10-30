@@ -4,6 +4,7 @@ import { ChangeTicketStatusResponse } from "./ChangeTicketStatusResponse";
 import { TicketRepository } from "../../../../domain/repositories/TicketRepository";
 import { ApplicationException } from "../../../common/exceptions/ApplicationException";
 import { TicketStatus } from "../../../../domain/enums/TicketStatus";
+import { TicketHistoryRepository } from "../../../../domain/repositories/TicketHistoryRepository";
 
 /**
  * Use case to change ticket status with workflow validation
@@ -35,7 +36,7 @@ export class ChangeTicketStatusUseCase extends AbstractUseCase<
   //   [TicketStatus.PRODUCTION]: []
   // };
 
-  constructor(private readonly ticketRepository: TicketRepository) {
+  constructor(private readonly ticketRepository: TicketRepository, private readonly ticketHistoryRepository: TicketHistoryRepository) {
     super();
   }
 
@@ -43,7 +44,10 @@ export class ChangeTicketStatusUseCase extends AbstractUseCase<
     command: ChangeTicketStatusCommand
   ): Promise<Partial<ChangeTicketStatusResponse>> {
     
-    const ticket = await this.ticketRepository.findById(command.ticketId);
+    const ticket = await this.ticketRepository.findOne(
+      { id: command.ticketId },
+      { relations: ['histories'] }
+    );
     if (!ticket) {
       throw new ApplicationException('TICKET_NOT_FOUND', { 
         ticketId: command.ticketId 
@@ -59,6 +63,29 @@ export class ChangeTicketStatusUseCase extends AbstractUseCase<
         status: newStatus
       });
     }
+
+    const lastHistory = ticket.histories ?.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+
+    const now = new Date();
+    let durationSeconds: number | null = null;
+    let startedAt: Date | null = null;
+
+    if (lastHistory) {
+      startedAt = lastHistory.completedAt;
+      durationSeconds = Math.floor(
+        (now.getTime() - startedAt.getTime()) / 1000
+      );
+    }
+
+    await this.ticketHistoryRepository.create({
+      ticket: { id: command.ticketId },
+      fromStatus: currentStatus,
+      toStatus: newStatus,
+      changedBy: ticket.assignee ? ticket.assignee : null,
+      startedAt,
+      completedAt: now,
+      durationSeconds
+    });
 
     // const validTransitions = this.VALID_TRANSITIONS[currentStatus];
     // if (!validTransitions.includes(newStatus)) {

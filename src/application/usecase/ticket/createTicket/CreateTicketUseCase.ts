@@ -4,13 +4,14 @@ import { CreateTicketResponse } from "./CreateTicketResponse";
 import { TicketRepository } from "../../../../domain/repositories/TicketRepository";
 import { UserRepository } from "../../../../domain/repositories/UserRepository";
 import { SprintRepository } from "../../../../domain/repositories/SprintRepository";
+import { TicketHistoryRepository } from "../../../../domain/repositories/TicketHistoryRepository";
 import { ApplicationException } from "../../../common/exceptions/ApplicationException";
 import { TicketStatus } from "../../../../domain/enums/TicketStatus";
 import GithubBranchUtils from "../../../Utils/GithubBranchUtils";
 
 
-export class CreateTicketUseCase extends AbstractUseCase<
-  CreateTicketCommand,
+export class CreateTicketUseCase extends AbstractUseCase
+< CreateTicketCommand,
   CreateTicketResponse
 > {
   protected static commandClass = CreateTicketCommand;
@@ -18,7 +19,8 @@ export class CreateTicketUseCase extends AbstractUseCase<
   constructor(
     private readonly ticketRepository: TicketRepository,
     private readonly userRepository: UserRepository,
-    private readonly sprintRepository: SprintRepository
+    private readonly sprintRepository: SprintRepository,
+    private readonly ticketHistoryRepository: TicketHistoryRepository
   ) {
     super();
   }
@@ -100,6 +102,17 @@ export class CreateTicketUseCase extends AbstractUseCase<
     }
 
     const ticket = await this.ticketRepository.create(ticketData);
+
+    const now = new Date();
+    await this.ticketHistoryRepository.create({
+      ticket: ticket,
+      fromStatus: null,
+      toStatus: TicketStatus.TODO,
+      changedBy: creator, 
+      startedAt: null,
+      completedAt: now,
+      durationSeconds: null 
+    });
 
     return {
       id: ticket.id,

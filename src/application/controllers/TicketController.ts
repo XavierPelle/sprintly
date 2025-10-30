@@ -22,6 +22,7 @@ import {AddTagToTicketCommand} from "../usecase/tag/AddTagToTicket/AddTagToTicke
 import {RemoveTagFromTicketCommand} from "../usecase/tag/RemoveTagFromTicket/RemoveTagFromTicketCommand";
 import {RemoveTagFromTicketUseCase} from "../usecase/tag/RemoveTagFromTicket/RemoveTagFromTicketUseCase";
 import {TagRepository} from "../../domain/repositories/TagRepository";
+import { TicketHistoryRepository } from "../../domain/repositories/TicketHistoryRepository";
 
 
 export class TicketController extends AbstractController<Ticket> {
@@ -29,12 +30,13 @@ export class TicketController extends AbstractController<Ticket> {
     repository: TicketRepository,
     private readonly userRepository: UserRepository,
     private readonly sprintRepository: SprintRepository,
-    private readonly tagRepository: TagRepository
+    private readonly tagRepository: TagRepository,
+    private readonly ticketHistoryRepository: TicketHistoryRepository
   ) {
     super(repository);
   }
 
-  protected get TicketRepository(): TicketRepository {
+  protected get ticketRepository(): TicketRepository {
     return this.repository as TicketRepository;
   }
 
@@ -71,9 +73,10 @@ export class TicketController extends AbstractController<Ticket> {
       const creatorId = request.user!.userId;
 
       const useCase = new CreateTicketUseCase(
-        this.TicketRepository,
+        this.ticketRepository,
         this.userRepository,
-        this.sprintRepository
+        this.sprintRepository,
+        this.ticketHistoryRepository
       );
 
       const command = new CreateTicketCommand(
@@ -138,7 +141,7 @@ export class TicketController extends AbstractController<Ticket> {
         limit
       } = request.query;
 
-      const useCase = new SearchTicketsUseCase(this.TicketRepository);
+      const useCase = new SearchTicketsUseCase(this.ticketRepository);
 
       const command = new SearchTicketsCommand(
         query,
@@ -177,7 +180,7 @@ export class TicketController extends AbstractController<Ticket> {
     try {
       const ticketId = Number(request.params.id);
 
-      const useCase = new GetTicketDetailsUseCase(this.TicketRepository);
+      const useCase = new GetTicketDetailsUseCase(this.ticketRepository);
       const command = new GetTicketDetailsCommand(ticketId);
       const response = await useCase.execute(command);
 
@@ -206,7 +209,7 @@ export class TicketController extends AbstractController<Ticket> {
       const { userId } = request.body;
 
       const useCase = new AssignTicketToUserUseCase(
-        this.TicketRepository,
+        this.ticketRepository,
         this.userRepository
       );
 
@@ -237,7 +240,7 @@ export class TicketController extends AbstractController<Ticket> {
       const ticketId = Number(request.params.id);
       const { status } = request.body;
 
-      const useCase = new ChangeTicketStatusUseCase(this.TicketRepository);
+      const useCase = new ChangeTicketStatusUseCase(this.ticketRepository,this.ticketHistoryRepository);
       const command = new ChangeTicketStatusCommand(ticketId, status);
       const response = await useCase.execute(command);
 
@@ -266,7 +269,7 @@ export class TicketController extends AbstractController<Ticket> {
             const { content, color } = request.body;
 
             const useCase = new AddTagToTicketUseCase(
-                this.TicketRepository,
+                this.ticketRepository,
                 this.tagRepository
             );
 
@@ -297,7 +300,7 @@ export class TicketController extends AbstractController<Ticket> {
             const tagId = Number(request.params.tagId);
 
             const useCase = new RemoveTagFromTicketUseCase(
-                this.TicketRepository,
+                this.ticketRepository,
                 this.tagRepository
             );
 

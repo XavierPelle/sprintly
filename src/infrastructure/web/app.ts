@@ -35,7 +35,7 @@ const start = async (): Promise<void> => {
   try {
     await AppDataSource.initialize()
 
-    await seedDatabase(AppDataSource);
+    // await seedDatabase(AppDataSource);
 
     await fastify.register(cors, {
       origin:  true,
@@ -51,7 +51,7 @@ const start = async (): Promise<void> => {
     await fastify.register(fastifyStatic, {
       root: uploadsPath,
       prefix: "/uploads/",
-      decorateReply: false // Important pour éviter les conflits
+      decorateReply: false 
     });
 
     console.log('📁 Serving static files from:', uploadsPath);
